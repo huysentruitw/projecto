@@ -16,6 +16,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Projecto.Autofac", "src\Projecto.Autofac\Projecto.Autofac.csproj", "{D3F4430A-027B-4A0A-BEFC-D95CA3FDC1B7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Projecto.Autofac.Tests", "tests\Projecto.Autofac.Tests\Projecto.Autofac.Tests.csproj", "{2FEEC1DC-25DE-4011-BFC9-EFA0B732591E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +34,14 @@ Global
 		{B536912C-4C32-43E7-9530-58D51895B1A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B536912C-4C32-43E7-9530-58D51895B1A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B536912C-4C32-43E7-9530-58D51895B1A7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D3F4430A-027B-4A0A-BEFC-D95CA3FDC1B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D3F4430A-027B-4A0A-BEFC-D95CA3FDC1B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D3F4430A-027B-4A0A-BEFC-D95CA3FDC1B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D3F4430A-027B-4A0A-BEFC-D95CA3FDC1B7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FEEC1DC-25DE-4011-BFC9-EFA0B732591E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FEEC1DC-25DE-4011-BFC9-EFA0B732591E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FEEC1DC-25DE-4011-BFC9-EFA0B732591E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FEEC1DC-25DE-4011-BFC9-EFA0B732591E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -37,5 +49,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{83384E07-9B17-4818-B01E-A6B12D0EA358} = {E918DCE0-A450-413E-B48E-4AF9B16B7BE1}
 		{B536912C-4C32-43E7-9530-58D51895B1A7} = {FF109214-73E2-436C-A2CE-D3DDE1A493CB}
+		{D3F4430A-027B-4A0A-BEFC-D95CA3FDC1B7} = {E918DCE0-A450-413E-B48E-4AF9B16B7BE1}
+		{2FEEC1DC-25DE-4011-BFC9-EFA0B732591E} = {FF109214-73E2-436C-A2CE-D3DDE1A493CB}
 	EndGlobalSection
 EndGlobal

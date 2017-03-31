@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Projecto")]
-[assembly: AssemblyDescription("Managed .NET (C#) library for handling CQRS/ES projections while maintaining the event sequence order")]
+[assembly: AssemblyTitle("Projecto.Autofac.Tests")]
+[assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Projecto")]
-[assembly: AssemblyCopyright("Copyright ©  2017 Wouter Huysentruit")]
+[assembly: AssemblyProduct("Projecto.Autofac.Tests")]
+[assembly: AssemblyCopyright("Copyright ©  2017")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("83384e07-9b17-4818-b01e-a6b12d0ea358")]
+[assembly: Guid("2feec1dc-25de-4011-bfc9-efa0b732591e")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -34,6 +34,3 @@ using System.Runtime.InteropServices;
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
 [assembly: AssemblyFileVersion("1.0.0.0")]
-[assembly: InternalsVisibleTo("Projecto.Tests")]
-[assembly: InternalsVisibleTo("Projecto.Autofac.Tests")]
-[assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
