@@ -13,14 +13,14 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectorTests
     {
-        private Mock<IConnectionResolver> _connectionResolverMock;
+        private Mock<ConnectionResolver<FakeProjectContext>> _connectionResolverMock;
         private Mock<IProjection<FakeProjectContext>>[] _projectionMocks;
         private FakeProjectContext _projectContext;
 
         [SetUp]
         public void SetUp()
         {
-            _connectionResolverMock = new Mock<IConnectionResolver>();
+            _connectionResolverMock = new Mock<ConnectionResolver<FakeProjectContext>>();
             _projectionMocks = new []
             {
                 new Mock<IProjection<FakeProjectContext>>(),
@@ -208,16 +208,16 @@ namespace Projecto.Tests
                 .Callback(() => nextSequences[2]++).Returns(() => Task.FromResult(0));
             _projectionMocks[2].SetupGet(x => x.ConnectionType).Returns(typeof(ConnectionA));
 
-            _connectionResolverMock.Setup(x => x.Resolve(typeof(ConnectionA))).Returns(connectionA);
-            _connectionResolverMock.Setup(x => x.Resolve(typeof(ConnectionB))).Returns(connectionB);
+            _connectionResolverMock.Setup(x => x(_projectContext, typeof(ConnectionA))).Returns(connectionA);
+            _connectionResolverMock.Setup(x => x(_projectContext, typeof(ConnectionB))).Returns(connectionB);
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
             var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
 
             await projector.Project(5, _projectContext, message);
 
-            _connectionResolverMock.Verify(x => x.Resolve(typeof(ConnectionA)), Times.Exactly(2));
-            _connectionResolverMock.Verify(x => x.Resolve(typeof(ConnectionB)), Times.Once);
+            _connectionResolverMock.Verify(x => x(_projectContext, typeof(ConnectionA)), Times.Exactly(2));
+            _connectionResolverMock.Verify(x => x(_projectContext, typeof(ConnectionB)), Times.Once);
         }
     }
 }

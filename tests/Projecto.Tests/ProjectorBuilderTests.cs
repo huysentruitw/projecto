@@ -1,7 +1,6 @@
 ﻿using System;
 using Moq;
 using NUnit.Framework;
-using Projecto.Infrastructure;
 using Projecto.Tests.TestClasses;
 
 namespace Projecto.Tests
@@ -9,6 +8,8 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectorBuilderTests
     {
+        private readonly ConnectionResolver<FakeProjectContext> _resolver = (_, __) => new FakeConnection();
+
         [Test]
         public void Register_PassingNullAsSingleProjection_ShouldThrowException()
         {
@@ -36,10 +37,9 @@ namespace Projecto.Tests
         [Test]
         public void Build_WithSingleProjectionRegistered_ShouldGetPassedToProjectorInstance()
         {
-            var connectionResolver = new Mock<IConnectionResolver>().Object;
             var projection = new TestProjection();
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            builder.Register(projection).SetConnectionResolver(connectionResolver);
+            builder.Register(projection).SetConnectionResolver(_resolver);
 
             var projector = builder.Build();
             Assert.That(projector.Projections.Length, Is.EqualTo(1));
@@ -49,7 +49,7 @@ namespace Projecto.Tests
         [Test]
         public void Build_WithMultipleProjectionsRegistered_ShouldGetPassedToProjectorInstance()
         {
-            var connectionResolver = new Mock<IConnectionResolver>().Object;
+            var connectionResolver = new Mock<ConnectionResolver<FakeProjectContext>>().Object;
             var projections = new[] {new TestProjection(), new TestProjection()};
             var builder = new ProjectorBuilder<FakeProjectContext>();
             builder.Register(projections).SetConnectionResolver(connectionResolver);
@@ -63,13 +63,12 @@ namespace Projecto.Tests
         [Test]
         public void Build_WithCertainConnectionResolver_ShouldGetPassedToProjectorInstance()
         {
-            var connectionResolver = new Mock<IConnectionResolver>().Object;
             var projection = new TestProjection();
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            builder.Register(projection).SetConnectionResolver(connectionResolver);
+            builder.Register(projection).SetConnectionResolver(_resolver);
 
             var projector = builder.Build();
-            Assert.That(projector.ConnectionResolver, Is.EqualTo(connectionResolver));
+            Assert.That(projector.ConnectionResolver, Is.EqualTo(_resolver));
         }
     }
 }

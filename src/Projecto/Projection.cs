@@ -78,7 +78,7 @@ namespace Projecto
             => _handlers.Add(typeof(TMessage), (connection, context, message, cancellationToken) => handler(connection, context, (TMessage)message, cancellationToken));
 
         /// <summary>
-        /// Gets the type of the connection. Used internally for the <see cref="IConnectionResolver"/>.
+        /// Gets the type of the connection. Used internally for the <see cref="ConnectionResolver{TProjectContext}"/>.
         /// </summary>
         Type IProjection<TProjectContext>.ConnectionType => typeof(TConnection);
 

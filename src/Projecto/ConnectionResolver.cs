@@ -16,18 +16,14 @@
 
 using System;
 
-namespace Projecto.Infrastructure
+namespace Projecto
 {
     /// <summary>
-    /// Interface for the connection resolver.
+    /// Connection resolver delegate.
     /// </summary>
-    public interface IConnectionResolver
-    {
-        /// <summary>
-        /// Resolves a connection for the given connection type.
-        /// </summary>
-        /// <param name="connectionType">The connection type.</param>
-        /// <returns>A connection.</returns>
-        object Resolve(Type connectionType);
-    }
+    /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
+    /// <param name="projectContext">The <see cref="Projector{TProjectContext}"/> instance.</param>
+    /// <param name="connectionType">The connection type.</param>
+    /// <returns>A connection instance.</returns>
+    public delegate object ConnectionResolver<in TProjectContext>(TProjectContext projectContext, Type connectionType);
 }

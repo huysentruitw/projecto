@@ -27,7 +27,7 @@ namespace Projecto
     public class ProjectorBuilder<TProjectContext>
     {
         private readonly HashSet<IProjection<TProjectContext>> _projections = new HashSet<IProjection<TProjectContext>>();
-        private IConnectionResolver _connectionResolver;
+        private ConnectionResolver<TProjectContext> _connectionResolver;
 
         /// <summary>
         /// Registers a projection.
@@ -60,7 +60,7 @@ namespace Projecto
         /// </summary>
         /// <param name="connectionResolver">The connection resolver.</param>
         /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> SetConnectionResolver(IConnectionResolver connectionResolver)
+        public ProjectorBuilder<TProjectContext> SetConnectionResolver(ConnectionResolver<TProjectContext> connectionResolver)
         {
             if (connectionResolver == null) throw new ArgumentNullException(nameof(connectionResolver));
             _connectionResolver = connectionResolver;

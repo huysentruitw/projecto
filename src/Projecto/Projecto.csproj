@@ -43,7 +43,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Infrastructure\IConnectionResolver.cs" />
+    <Compile Include="ConnectionResolver.cs" />
     <Compile Include="Infrastructure\IProjection.cs" />
     <Compile Include="Projection.cs" />
     <Compile Include="Projector.cs" />

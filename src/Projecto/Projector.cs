@@ -30,7 +30,7 @@ namespace Projecto
     public class Projector<TProjectContext>
     {
         private readonly HashSet<IProjection<TProjectContext>> _projections;
-        private readonly IConnectionResolver _connectionResolver;
+        private readonly ConnectionResolver<TProjectContext> _connectionResolver;
         private int? _nextSequenceNumber;
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Projecto
         /// </summary>
         /// <param name="projections">The registered projections.</param>
         /// <param name="connectionResolver">The connection resolver.</param>
-        internal Projector(HashSet<IProjection<TProjectContext>> projections, IConnectionResolver connectionResolver)
+        internal Projector(HashSet<IProjection<TProjectContext>> projections, ConnectionResolver<TProjectContext> connectionResolver)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             if (!projections.Any()) throw new ArgumentException("No projections registered", nameof(projections));
@@ -50,7 +50,7 @@ namespace Projecto
         /// <summary>
         /// Returns ConnectionResolver for internal usage and unit-testing.
         /// </summary>
-        internal IConnectionResolver ConnectionResolver => _connectionResolver;
+        internal ConnectionResolver<TProjectContext> ConnectionResolver => _connectionResolver;
 
         /// <summary>
         /// Returns the Projections for internal usage and unit-testing.
@@ -85,7 +85,7 @@ namespace Projecto
 
             foreach (var projection in _projections.Where(x => x.NextSequenceNumber == sequenceNumber))
             {
-                var connection = _connectionResolver.Resolve(projection.ConnectionType);
+                var connection = _connectionResolver(context, projection.ConnectionType);
                 await projection.Handle(connection, context, message, cancellationToken).ConfigureAwait(false);
                 if (cancellationToken.IsCancellationRequested) return;
                 if (projection.NextSequenceNumber != sequenceNumber + 1)
