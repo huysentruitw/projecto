@@ -40,7 +40,7 @@ namespace Projecto.Autofac
             builder.Register(projections);
 
             var lifetimeScopeFactory = componentContext.Resolve<Func<ILifetimeScope>>();
-            builder.SetProjectScopeFactory((_, __) => new AutofacProjectScope(lifetimeScopeFactory));
+            builder.SetProjectScopeFactory((_, __) => new AutofacProjectScope(() => lifetimeScopeFactory().BeginLifetimeScope()));
             return builder;
         }
     }
