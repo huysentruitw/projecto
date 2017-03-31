@@ -1,6 +1,7 @@
 ﻿using System;
 using Moq;
 using NUnit.Framework;
+using Projecto.Infrastructure;
 using Projecto.Tests.TestClasses;
 
 namespace Projecto.Tests
@@ -11,10 +12,10 @@ namespace Projecto.Tests
         private readonly ProjectScopeFactory<FakeProjectContext> _projectScopeFactory = (_, __) => new FakeProjectScope();
 
         [Test]
-        public void Register_PassingNullAsSingleProjection_ShouldThrowException()
+        public void Register_PassingNullAsProjection_ShouldThrowException()
         {
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            var ex = Assert.Throws<ArgumentNullException>(() => builder.Register((Projection<FakeConnection, FakeProjectContext>)null));
+            var ex = Assert.Throws<ArgumentNullException>(() => builder.Register((IProjection<FakeProjectContext>)null));
             Assert.That(ex.ParamName, Is.EqualTo("projection"));
         }
 

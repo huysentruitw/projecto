@@ -32,12 +32,12 @@ namespace Projecto
         /// <summary>
         /// Registers a projection.
         /// </summary>
-        /// <typeparam name="TConnection">The type of the connection needed by the projection.</typeparam>
         /// <param name="projection">The projection to register.</param>
         /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> Register<TConnection>(Projection<TConnection, TProjectContext> projection)
+        public ProjectorBuilder<TProjectContext> Register(IProjection<TProjectContext> projection)
         {
             if (projection == null) throw new ArgumentNullException(nameof(projection));
+            if (_projections.Contains(projection)) throw new ArgumentException("Projection already registered", nameof(projection));
             _projections.Add(projection);
             return this;
         }
@@ -45,10 +45,9 @@ namespace Projecto
         /// <summary>
         /// Registers multiple projections.
         /// </summary>
-        /// <typeparam name="TConnection">The type of the connection needed by the projections.</typeparam>
         /// <param name="projections">The projections.</param>
         /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> Register<TConnection>(IEnumerable<Projection<TConnection, TProjectContext>> projections)
+        public ProjectorBuilder<TProjectContext> Register(IEnumerable<IProjection<TProjectContext>> projections)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             foreach (var projection in projections) Register(projection);
