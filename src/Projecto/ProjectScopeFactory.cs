@@ -19,7 +19,7 @@ namespace Projecto
     /// <summary>
     /// Project scope factory delegate.
     /// </summary>
-    /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
+    /// <typeparam name="TProjectContext">The type of the project context (custom information being passed to the handler).</typeparam>
     /// <param name="projectContext">The <see cref="Projector{TProjectContext}"/> instance.</param>
     /// <param name="message">The message instance.</param>
     /// <returns>A project scope instance.</returns>
