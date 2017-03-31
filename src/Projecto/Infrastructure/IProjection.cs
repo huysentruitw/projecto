@@ -20,7 +20,11 @@ using System.Threading.Tasks;
 
 namespace Projecto.Infrastructure
 {
-    internal interface IProjection<in TProjectContext>
+    /// <summary>
+    /// Interface for Projections.
+    /// </summary>
+    /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
+    public interface IProjection<in TProjectContext>
     {
         /// <summary>
         /// Gets the next event sequence number needed by this projection.
