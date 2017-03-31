@@ -8,7 +8,7 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectorBuilderTests
     {
-        private readonly ConnectionResolver<FakeProjectContext> _resolver = (_, __) => new FakeConnection();
+        private readonly ProjectScopeFactory<FakeProjectContext> _projectScopeFactory = (_, __) => new FakeProjectScope();
 
         [Test]
         public void Register_PassingNullAsSingleProjection_ShouldThrowException()
@@ -27,11 +27,11 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void SetConnectionResolver_PassingNullAsConnectionResolver_ShouldThrowException()
+        public void SetProjectScopeFactory_PassingNullAsProjectScopeFactory_ShouldThrowException()
         {
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            var ex = Assert.Throws<ArgumentNullException>(() => builder.SetConnectionResolver(null));
-            Assert.That(ex.ParamName, Is.EqualTo("connectionResolver"));
+            var ex = Assert.Throws<ArgumentNullException>(() => builder.SetProjectScopeFactory(null));
+            Assert.That(ex.ParamName, Is.EqualTo("projectScopeFactory"));
         }
 
         [Test]
@@ -39,7 +39,7 @@ namespace Projecto.Tests
         {
             var projection = new TestProjection();
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            builder.Register(projection).SetConnectionResolver(_resolver);
+            builder.Register(projection).SetProjectScopeFactory(_projectScopeFactory);
 
             var projector = builder.Build();
             Assert.That(projector.Projections.Length, Is.EqualTo(1));
@@ -49,10 +49,10 @@ namespace Projecto.Tests
         [Test]
         public void Build_WithMultipleProjectionsRegistered_ShouldGetPassedToProjectorInstance()
         {
-            var connectionResolver = new Mock<ConnectionResolver<FakeProjectContext>>().Object;
+            var projectScopeFactory = new Mock<ProjectScopeFactory<FakeProjectContext>>().Object;
             var projections = new[] {new TestProjection(), new TestProjection()};
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            builder.Register(projections).SetConnectionResolver(connectionResolver);
+            builder.Register(projections).SetProjectScopeFactory(projectScopeFactory);
 
             var projector = builder.Build();
             Assert.That(projector.Projections.Length, Is.EqualTo(2));
@@ -61,14 +61,14 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void Build_WithCertainConnectionResolver_ShouldGetPassedToProjectorInstance()
+        public void Build_WithCertainProjectScopeFactory_ShouldGetPassedToProjectorInstance()
         {
             var projection = new TestProjection();
             var builder = new ProjectorBuilder<FakeProjectContext>();
-            builder.Register(projection).SetConnectionResolver(_resolver);
+            builder.Register(projection).SetProjectScopeFactory(_projectScopeFactory);
 
             var projector = builder.Build();
-            Assert.That(projector.ConnectionResolver, Is.EqualTo(_resolver));
+            Assert.That(projector.ProjectScopeFactory, Is.EqualTo(_projectScopeFactory));
         }
     }
 }

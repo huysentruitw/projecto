@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-using System;
-
 namespace Projecto
 {
     /// <summary>
-    /// Connection resolver delegate.
+    /// Project scope factory delegate.
     /// </summary>
     /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
     /// <param name="projectContext">The <see cref="Projector{TProjectContext}"/> instance.</param>
-    /// <param name="connectionType">The connection type.</param>
-    /// <returns>A connection instance.</returns>
-    public delegate object ConnectionResolver<in TProjectContext>(TProjectContext projectContext, Type connectionType);
+    /// <param name="message">The message instance.</param>
+    /// <returns>A project scope instance.</returns>
+    public delegate ProjectScope ProjectScopeFactory<in TProjectContext>(TProjectContext projectContext, object message);
 }

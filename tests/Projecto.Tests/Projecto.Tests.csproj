@@ -60,6 +60,7 @@
     <Compile Include="TestClasses\Connections.cs" />
     <Compile Include="TestClasses\FakeConnection.cs" />
     <Compile Include="TestClasses\FakeProjectContext.cs" />
+    <Compile Include="TestClasses\FakeProjectScope.cs" />
     <Compile Include="TestClasses\Messages.cs" />
     <Compile Include="TestClasses\TestProjection.cs" />
   </ItemGroup>

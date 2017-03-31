@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -13,14 +14,14 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectorTests
     {
-        private Mock<ConnectionResolver<FakeProjectContext>> _connectionResolverMock;
+        private Mock<ProjectScopeFactory<FakeProjectContext>> _projectScopeFactoryMock;
         private Mock<IProjection<FakeProjectContext>>[] _projectionMocks;
         private FakeProjectContext _projectContext;
 
         [SetUp]
         public void SetUp()
         {
-            _connectionResolverMock = new Mock<ConnectionResolver<FakeProjectContext>>();
+            _projectScopeFactoryMock = new Mock<ProjectScopeFactory<FakeProjectContext>>();
             _projectionMocks = new []
             {
                 new Mock<IProjection<FakeProjectContext>>(),
@@ -33,7 +34,7 @@ namespace Projecto.Tests
         [Test]
         public void Constructor_PassNullAsProjectionSet_ShouldThrowException()
         {
-            var ex = Assert.Throws<ArgumentNullException>(() => new Projector<FakeProjectContext>(null, _connectionResolverMock.Object));
+            var ex = Assert.Throws<ArgumentNullException>(() => new Projector<FakeProjectContext>(null, _projectScopeFactoryMock.Object));
             Assert.That(ex.ParamName, Is.EqualTo("projections"));
         }
 
@@ -41,16 +42,16 @@ namespace Projecto.Tests
         public void Constructor_PassEmptyProjectionSet_ShouldThrowException()
         {
             var emptySet = new HashSet<IProjection<FakeProjectContext>>();
-            var ex = Assert.Throws<ArgumentException>(() => new Projector<FakeProjectContext>(emptySet, _connectionResolverMock.Object));
+            var ex = Assert.Throws<ArgumentException>(() => new Projector<FakeProjectContext>(emptySet, _projectScopeFactoryMock.Object));
             Assert.That(ex.ParamName, Is.EqualTo("projections"));
         }
 
         [Test]
-        public void Constructor_PassNullAsConnectionResolver_ShouldThrowException()
+        public void Constructor_PassNullAsProjectScopeFactory_ShouldThrowException()
         {
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
             var ex = Assert.Throws<ArgumentNullException>(() => new Projector<FakeProjectContext>(projections, null));
-            Assert.That(ex.ParamName, Is.EqualTo("connectionResolver"));
+            Assert.That(ex.ParamName, Is.EqualTo("projectScopeFactory"));
         }
 
         [Test]
@@ -61,7 +62,7 @@ namespace Projecto.Tests
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(102);
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
+            var projector = new Projector<FakeProjectContext>(projections, _projectScopeFactoryMock.Object);
             Assert.That(projector.NextSequenceNumber, Is.EqualTo(73));
         }
 
@@ -73,13 +74,13 @@ namespace Projecto.Tests
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(3);
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
+            var projector = new Projector<FakeProjectContext>(projections, _projectScopeFactoryMock.Object);
             var ex = Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => projector.Project(2, _projectContext, new MessageA()));
             Assert.That(ex.ParamName, Is.EqualTo("sequenceNumber"));
         }
 
         [Test]
-        public async Task Project_ProjectionDoesntIncrementSequenceNumber_ShouldThrowException()
+        public void Project_ProjectionDoesntIncrementSequenceNumber_ShouldThrowException()
         {
             var message = new MessageA();
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(5);
@@ -87,7 +88,7 @@ namespace Projecto.Tests
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(3);
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
+            var projector = new Projector<FakeProjectContext>(projections, _projectScopeFactoryMock.Object);
             var ex = Assert.ThrowsAsync<InvalidOperationException>(() => projector.Project(3, _projectContext, message));
             Assert.That(ex.Message, Contains.Substring("did not increment NextSequence (3) after processing event"));
         }
@@ -101,12 +102,12 @@ namespace Projecto.Tests
             _projectionMocks[1].SetupGet(x => x.NextSequenceNumber).Returns(6);
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequence);
             _projectionMocks[2]
-                .Setup(x => x.Handle(It.IsAny<object>(), _projectContext, message, CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), _projectContext, message, CancellationToken.None))
                 .Callback(() => nextSequence++)
                 .Returns(() => Task.FromResult(0));
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
+            var projector = new Projector<FakeProjectContext>(projections, _projectScopeFactoryMock.Object);
             Assert.That(projector.NextSequenceNumber, Is.EqualTo(3));
             await projector.Project(3, _projectContext, message);
             Assert.That(projector.NextSequenceNumber, Is.EqualTo(4));
@@ -119,42 +120,42 @@ namespace Projecto.Tests
             var nextSequences = new[] {5, 6, 5};
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[0]);
             _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<object>(), _projectContext, message, CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), _projectContext, message, CancellationToken.None))
                 .Callback(() => nextSequences[0]++).Returns(() => Task.FromResult(0));
 
             _projectionMocks[1].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[1]);
             _projectionMocks[1]
-                .Setup(x => x.Handle(It.IsAny<object>(), _projectContext, message, CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), _projectContext, message, CancellationToken.None))
                 .Callback(() => nextSequences[1]++).Returns(() => Task.FromResult(0));
 
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[2]);
             _projectionMocks[2]
-                .Setup(x => x.Handle(It.IsAny<object>(), _projectContext, message, CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), _projectContext, message, CancellationToken.None))
                 .Callback(() => nextSequences[2]++).Returns(() => Task.FromResult(0));
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
+            var projector = new Projector<FakeProjectContext>(projections, _projectScopeFactoryMock.Object);
 
             await projector.Project(5, _projectContext, message);
             _projectionMocks[0].Verify(
-                x => x.Handle(It.IsAny<object>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<Type, object>>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                 Times.Once);
             _projectionMocks[1].Verify(
-                x => x.Handle(It.IsAny<object>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<Type, object>>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                 Times.Never);
             _projectionMocks[2].Verify(
-                x => x.Handle(It.IsAny<object>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<Type, object>>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                 Times.Once);
 
             await projector.Project(6, _projectContext, message);
             _projectionMocks[0].Verify(
-                x => x.Handle(It.IsAny<object>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<Type, object>>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                 Times.Exactly(2));
             _projectionMocks[1].Verify(
-                x => x.Handle(It.IsAny<object>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<Type, object>>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                 Times.Once);
             _projectionMocks[2].Verify(
-                x => x.Handle(It.IsAny<object>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<Type, object>>(), It.IsAny<FakeProjectContext>(), It.IsAny<object>(), It.IsAny<CancellationToken>()),
                 Times.Exactly(2));
         }
 
@@ -165,7 +166,7 @@ namespace Projecto.Tests
             var isCancelled = false;
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => 10);
             _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<object>(), _projectContext, message, It.IsAny<CancellationToken>()))
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), _projectContext, message, It.IsAny<CancellationToken>()))
                 .Returns<object, FakeProjectContext, object, CancellationToken>((conn, ctx, msg, token) =>
                 {
                     return Task.Run(() =>
@@ -176,48 +177,44 @@ namespace Projecto.Tests
                 });
 
             var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Take(1).Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
+            var projector = new Projector<FakeProjectContext>(projections, _projectScopeFactoryMock.Object);
             var cancellationTokenSource = new CancellationTokenSource(10);
             await projector.Project(10, _projectContext, message, cancellationTokenSource.Token);
             Assert.True(isCancelled);
         }
 
         [Test]
-        public async Task Project_ProjectionsWithDifferentConnectionType_ShouldPassCorrectConnection()
+        public async Task Project_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeProjectScopeInCorrectOrder()
         {
             var message = new MessageA();
-            var nextSequences = new[] { 5, 5, 5 };
-            var connectionA = new ConnectionA();
-            var connectionB = new ConnectionB();
+            var nextSequence = 5;
+            var connectionType = typeof(ConnectionA);
 
-            _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[0]);
+            _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequence);
             _projectionMocks[0]
-                .Setup(x => x.Handle(connectionA, _projectContext, message, CancellationToken.None))
-                .Callback(() => nextSequences[0]++).Returns(() => Task.FromResult(0));
-            _projectionMocks[0].SetupGet(x => x.ConnectionType).Returns(typeof(ConnectionA));
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), _projectContext, message, CancellationToken.None))
+                .Callback<Func<Type, object>, FakeProjectContext, object, CancellationToken>((connectionResolver, _, __, ___) =>
+                {
+                    connectionResolver(connectionType);
+                    nextSequence++;
+                })
+                .Returns(() => Task.FromResult(0));
 
-            _projectionMocks[1].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[1]);
-            _projectionMocks[1]
-                .Setup(x => x.Handle(connectionB, _projectContext, message, CancellationToken.None))
-                .Callback(() => nextSequences[1]++).Returns(() => Task.FromResult(0));
-            _projectionMocks[1].SetupGet(x => x.ConnectionType).Returns(typeof(ConnectionB));
+            var executionOrder = 0;
+            var scopeMock = new Mock<ProjectScope>();
+            scopeMock.Setup(x => x.ResolveConnection(connectionType)).Callback(() => Assert.That(executionOrder++, Is.EqualTo(1)));
+            scopeMock.Setup(x => x.Dispose()).Callback(() => Assert.That(executionOrder++, Is.EqualTo(2)));
 
-            _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[2]);
-            _projectionMocks[2]
-                .Setup(x => x.Handle(connectionA, _projectContext, message, CancellationToken.None))
-                .Callback(() => nextSequences[2]++).Returns(() => Task.FromResult(0));
-            _projectionMocks[2].SetupGet(x => x.ConnectionType).Returns(typeof(ConnectionA));
+            var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Take(1).Select(x => x.Object));
+            var projector = new Projector<FakeProjectContext>(projections, (ctx, msg) =>
+            {
+                Assert.That(executionOrder++, Is.EqualTo(0));
+                return scopeMock.Object;
+            });
 
-            _connectionResolverMock.Setup(x => x(_projectContext, typeof(ConnectionA))).Returns(connectionA);
-            _connectionResolverMock.Setup(x => x(_projectContext, typeof(ConnectionB))).Returns(connectionB);
+            await projector.Project(nextSequence, _projectContext, message);
 
-            var projections = new HashSet<IProjection<FakeProjectContext>>(_projectionMocks.Select(x => x.Object));
-            var projector = new Projector<FakeProjectContext>(projections, _connectionResolverMock.Object);
-
-            await projector.Project(5, _projectContext, message);
-
-            _connectionResolverMock.Verify(x => x(_projectContext, typeof(ConnectionA)), Times.Exactly(2));
-            _connectionResolverMock.Verify(x => x(_projectContext, typeof(ConnectionB)), Times.Once);
+            Assert.That(executionOrder, Is.EqualTo(3));
         }
     }
 }

@@ -78,23 +78,21 @@ namespace Projecto
             => _handlers.Add(typeof(TMessage), (connection, context, message, cancellationToken) => handler(connection, context, (TMessage)message, cancellationToken));
 
         /// <summary>
-        /// Gets the type of the connection. Used internally for the <see cref="ConnectionResolver{TProjectContext}"/>.
-        /// </summary>
-        Type IProjection<TProjectContext>.ConnectionType => typeof(TConnection);
-
-        /// <summary>
         /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
         /// </summary>
-        /// <param name="connection">The connection object.</param>
+        /// <param name="connectionResolver">The connection resolver.</param>
         /// <param name="context">The project context (used to pass custom information to the handler).</param>
         /// <param name="message">The message.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        async Task IProjection<TProjectContext>.Handle(object connection, TProjectContext context, object message, CancellationToken cancellationToken)
+        async Task IProjection<TProjectContext>.Handle(Func<Type, object> connectionResolver, TProjectContext context, object message, CancellationToken cancellationToken)
         {
             Handler handler;
             if (_handlers.TryGetValue(message.GetType(), out handler))
-                await handler((TConnection)connection, context, message, cancellationToken).ConfigureAwait(false);
+            {
+                var connection = (TConnection) connectionResolver(typeof(TConnection));
+                await handler(connection, context, message, cancellationToken).ConfigureAwait(false);
+            }
 
             IncrementNextSequenceNumber();
         }

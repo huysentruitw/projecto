@@ -30,27 +30,27 @@ namespace Projecto
     public class Projector<TProjectContext>
     {
         private readonly HashSet<IProjection<TProjectContext>> _projections;
-        private readonly ConnectionResolver<TProjectContext> _connectionResolver;
+        private readonly ProjectScopeFactory<TProjectContext> _projectScopeFactory;
         private int? _nextSequenceNumber;
 
         /// <summary>
         /// Internal constructor, used by <see cref="ProjectorBuilder{TProjectContext}"/>.
         /// </summary>
         /// <param name="projections">The registered projections.</param>
-        /// <param name="connectionResolver">The connection resolver.</param>
-        internal Projector(HashSet<IProjection<TProjectContext>> projections, ConnectionResolver<TProjectContext> connectionResolver)
+        /// <param name="projectScopeFactory">The project scope factory.</param>
+        internal Projector(HashSet<IProjection<TProjectContext>> projections, ProjectScopeFactory<TProjectContext> projectScopeFactory)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             if (!projections.Any()) throw new ArgumentException("No projections registered", nameof(projections));
-            if (connectionResolver == null) throw new ArgumentNullException(nameof(connectionResolver));
+            if (projectScopeFactory == null) throw new ArgumentNullException(nameof(projectScopeFactory));
             _projections = projections;
-            _connectionResolver = connectionResolver;
+            _projectScopeFactory = projectScopeFactory;
         }
 
         /// <summary>
-        /// Returns ConnectionResolver for internal usage and unit-testing.
+        /// Returns the project scope factory for internal usage and unit-testing.
         /// </summary>
-        internal ConnectionResolver<TProjectContext> ConnectionResolver => _connectionResolver;
+        internal ProjectScopeFactory<TProjectContext> ProjectScopeFactory => _projectScopeFactory;
 
         /// <summary>
         /// Returns the Projections for internal usage and unit-testing.
@@ -83,13 +83,16 @@ namespace Projecto
         {
             if (sequenceNumber != NextSequenceNumber) throw new ArgumentOutOfRangeException(nameof(sequenceNumber), sequenceNumber, $"Expecting sequence {NextSequenceNumber}");
 
-            foreach (var projection in _projections.Where(x => x.NextSequenceNumber == sequenceNumber))
+            using (var scope = _projectScopeFactory(context, message))
             {
-                var connection = _connectionResolver(context, projection.ConnectionType);
-                await projection.Handle(connection, context, message, cancellationToken).ConfigureAwait(false);
-                if (cancellationToken.IsCancellationRequested) return;
-                if (projection.NextSequenceNumber != sequenceNumber + 1)
-                    throw new InvalidOperationException($"Projection {projection.GetType()} did not increment NextSequence ({sequenceNumber}) after processing event {message.GetType()}");
+                foreach (var projection in _projections.Where(x => x.NextSequenceNumber == sequenceNumber))
+                {
+                    await projection.Handle(type => scope.ResolveConnection(type), context, message, cancellationToken).ConfigureAwait(false);
+                    if (cancellationToken.IsCancellationRequested) return;
+                    if (projection.NextSequenceNumber != sequenceNumber + 1)
+                        throw new InvalidOperationException(
+                            $"Projection {projection.GetType()} did not increment NextSequence ({sequenceNumber}) after processing event {message.GetType()}");
+                }
             }
 
             _nextSequenceNumber++;

@@ -30,15 +30,8 @@ namespace Projecto.Tests
         {
             IProjection<FakeProjectContext> projection = new TestProjection(5);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(5));
-            await projection.Handle(new FakeConnection(), new FakeProjectContext(), new MessageA(), CancellationToken.None);
+            await projection.Handle(_ => new FakeConnection(), new FakeProjectContext(), new MessageA(), CancellationToken.None);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(6));
-        }
-
-        [Test]
-        public void ConnectionType_AfterConstruction_ShouldContainCorrectType()
-        {
-            IProjection<FakeProjectContext> projection = new TestProjection();
-            Assert.That(projection.ConnectionType, Is.EqualTo(typeof(FakeConnection)));
         }
 
         [Test]
@@ -52,8 +45,8 @@ namespace Projecto.Tests
             var contextB = new FakeProjectContext();
 
             IProjection<FakeProjectContext> projection = new TestProjection();
-            projection.Handle(connectionMock.Object, contextA, messageA, token);
-            projection.Handle(connectionMock.Object, contextB, messageB, token);
+            projection.Handle(_ => connectionMock.Object, contextA, messageA, token);
+            projection.Handle(_ => connectionMock.Object, contextB, messageB, token);
 
             connectionMock.Verify(x => x.UpdateA(contextA, messageA), Times.Once);
             connectionMock.Verify(x => x.UpdateB(contextB, messageB, token), Times.Once);

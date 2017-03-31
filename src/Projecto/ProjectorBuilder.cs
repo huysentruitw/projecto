@@ -27,7 +27,7 @@ namespace Projecto
     public class ProjectorBuilder<TProjectContext>
     {
         private readonly HashSet<IProjection<TProjectContext>> _projections = new HashSet<IProjection<TProjectContext>>();
-        private ConnectionResolver<TProjectContext> _connectionResolver;
+        private ProjectScopeFactory<TProjectContext> _projectScopeFactory;
 
         /// <summary>
         /// Registers a projection.
@@ -56,14 +56,14 @@ namespace Projecto
         }
 
         /// <summary>
-        /// Sets the connection resolver.
+        /// Sets the project scope factory.
         /// </summary>
-        /// <param name="connectionResolver">The connection resolver.</param>
+        /// <param name="projectScopeFactory">The project scope factory.</param>
         /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> SetConnectionResolver(ConnectionResolver<TProjectContext> connectionResolver)
+        public ProjectorBuilder<TProjectContext> SetProjectScopeFactory(ProjectScopeFactory<TProjectContext> projectScopeFactory)
         {
-            if (connectionResolver == null) throw new ArgumentNullException(nameof(connectionResolver));
-            _connectionResolver = connectionResolver;
+            if (projectScopeFactory == null) throw new ArgumentNullException(nameof(projectScopeFactory));
+            _projectScopeFactory = projectScopeFactory;
             return this;
         }
 
@@ -71,6 +71,6 @@ namespace Projecto
         /// Build a <see cref="Projector{TProjectContext}"/> instance.
         /// </summary>
         /// <returns>The <see cref="Projector{TProjectContext}"/> instance.</returns>
-        public Projector<TProjectContext> Build() => new Projector<TProjectContext>(_projections, _connectionResolver);
+        public Projector<TProjectContext> Build() => new Projector<TProjectContext>(_projections, _projectScopeFactory);
     }
 }

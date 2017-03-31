@@ -22,10 +22,19 @@ namespace Projecto.Infrastructure
 {
     internal interface IProjection<in TProjectContext>
     {
+        /// <summary>
+        /// Gets the next event sequence number needed by this projection.
+        /// </summary>
         int NextSequenceNumber { get; }
 
-        Type ConnectionType { get; }
-
-        Task Handle(object connection, TProjectContext context, object message, CancellationToken cancellationToken);
+        /// <summary>
+        /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
+        /// </summary>
+        /// <param name="connectionResolver">The connection resolver.</param>
+        /// <param name="context">The project context (used to pass custom information to the handler).</param>
+        /// <param name="message">The message.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A <see cref="Task"/> for async execution.</returns>
+        Task Handle(Func<Type, object> connectionResolver, TProjectContext context, object message, CancellationToken cancellationToken);
     }
 }
