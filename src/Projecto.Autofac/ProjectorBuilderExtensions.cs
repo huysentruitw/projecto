@@ -32,15 +32,28 @@ namespace Projecto.Autofac
         /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
         /// <param name="builder">The builder.</param>
         /// <param name="componentContext">The Autofac component context.</param>
-        /// <returns></returns>
+        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
         public static ProjectorBuilder<TProjectContext>
-            UseAutofac<TProjectContext>(this ProjectorBuilder<TProjectContext> builder, IComponentContext componentContext)
+            RegisterFromAutofac<TProjectContext>(this ProjectorBuilder<TProjectContext> builder, IComponentContext componentContext)
         {
             var projections = componentContext.Resolve<IEnumerable<IProjection<TProjectContext>>>();
             builder.Register(projections);
+            return builder;
+        }
 
+        /// <summary>
+        /// Configures the builder to resolve requested connection instances from the Autofac component scope.
+        /// </summary>
+        /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
+        /// <param name="builder">The builder.</param>
+        /// <param name="componentContext">The Autofac component context.</param>
+        /// <param name="connectionDisposalCallbacks">Optional <see cref="ConnectionDisposalCallbacks"/> instance.</param>
+        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
+        public static ProjectorBuilder<TProjectContext>
+            UseAutofacProjectScopeFactory<TProjectContext>(this ProjectorBuilder<TProjectContext> builder, IComponentContext componentContext, ConnectionDisposalCallbacks connectionDisposalCallbacks = null)
+        {
             var lifetimeScopeFactory = componentContext.Resolve<Func<ILifetimeScope>>();
-            builder.SetProjectScopeFactory((_, __) => new AutofacProjectScope(() => lifetimeScopeFactory().BeginLifetimeScope()));
+            builder.SetProjectScopeFactory((_, __) => new AutofacProjectScope(() => lifetimeScopeFactory().BeginLifetimeScope(), connectionDisposalCallbacks));
             return builder;
         }
     }

@@ -87,12 +87,14 @@ namespace Projecto
             {
                 foreach (var projection in _projections.Where(x => x.NextSequenceNumber == sequenceNumber))
                 {
-                    await projection.Handle(type => scope.ResolveConnection(type), context, message, cancellationToken).ConfigureAwait(false);
+                    await projection.Handle(type => scope.InternalResolveConnection(type), context, message, cancellationToken).ConfigureAwait(false);
                     if (cancellationToken.IsCancellationRequested) return;
                     if (projection.NextSequenceNumber != sequenceNumber + 1)
                         throw new InvalidOperationException(
                             $"Projection {projection.GetType()} did not increment NextSequence ({sequenceNumber}) after processing event {message.GetType()}");
                 }
+
+                await scope.BeforeDispose().ConfigureAwait(false);
             }
 
             _nextSequenceNumber++;

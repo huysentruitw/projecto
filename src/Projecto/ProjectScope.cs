@@ -15,7 +15,9 @@
  */
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Projecto
 {
@@ -25,6 +27,18 @@ namespace Projecto
     /// </summary>
     public abstract class ProjectScope : IDisposable
     {
+        private readonly ConnectionDisposalCallbacks _connectionDisposalCallbacks = null;
+        private readonly HashSet<Tuple<Type, object>> _resolvedConnections = new HashSet<Tuple<Type, object>>();
+
+        /// <summary>
+        /// Constructs a <see cref="ProjectScope"/> instance with a <see cref="ConnectionDisposalCallbacks"/> object.
+        /// </summary>
+        /// <param name="connectionDisposalCallbacks">Optional instance of <see cref="ConnectionDisposalCallbacks"/> that holds registered connection disposal callbacks.</param>
+        public ProjectScope(ConnectionDisposalCallbacks connectionDisposalCallbacks = null)
+        {
+            _connectionDisposalCallbacks = connectionDisposalCallbacks;
+        }
+
         /// <summary>
         /// Called when the project scope gets disposed.
         /// </summary>
@@ -36,5 +50,19 @@ namespace Projecto
         /// <param name="connectionType">The type of the connection to resolve.</param>
         /// <returns>The connection instance.</returns>
         public abstract object ResolveConnection(Type connectionType);
+
+        internal object InternalResolveConnection(Type connectionType)
+        {
+            var connection = ResolveConnection(connectionType);
+            if (connection != null) _resolvedConnections.Add(new Tuple<Type, object>(connectionType, connection));
+            return connection;
+        }
+
+        internal virtual async Task BeforeDispose()
+        {
+            if (_connectionDisposalCallbacks != null)
+                foreach (var resolvedConnection in _resolvedConnections)
+                    await _connectionDisposalCallbacks.ExecuteDisposalCallback(resolvedConnection.Item1, resolvedConnection.Item2).ConfigureAwait(false);
+        }
     }
 }

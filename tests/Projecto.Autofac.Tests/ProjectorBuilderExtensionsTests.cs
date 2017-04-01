@@ -21,7 +21,10 @@ namespace Projecto.Autofac.Tests
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
             services.RegisterType<FakeProjectionB>().AsImplementedInterfaces().SingleInstance();
 
-            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>().UseAutofac(ctx).Build())
+            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>()
+                .RegisterFromAutofac(ctx)
+                .UseAutofacProjectScopeFactory(ctx)
+                .Build())
                 .AsSelf()
                 .SingleInstance();
 
@@ -39,7 +42,10 @@ namespace Projecto.Autofac.Tests
             var services = new ContainerBuilder();
 
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
-            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>().UseAutofac(ctx).Build())
+            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>()
+                .RegisterFromAutofac(ctx)
+                .UseAutofacProjectScopeFactory(ctx)
+                .Build())
                 .AsSelf()
                 .SingleInstance();
 
@@ -75,7 +81,10 @@ namespace Projecto.Autofac.Tests
 
             services.RegisterType<FakeConnection>().AsSelf().InstancePerLifetimeScope();
             services.RegisterInstance(projectionMock.Object).AsImplementedInterfaces().SingleInstance();
-            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>().UseAutofac(ctx).Build())
+            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>()
+                .RegisterFromAutofac(ctx)
+                .UseAutofacProjectScopeFactory(ctx)
+                .Build())
                 .AsSelf()
                 .SingleInstance();
 

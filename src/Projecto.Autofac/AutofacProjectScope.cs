@@ -29,7 +29,10 @@ namespace Projecto.Autofac
         /// <summary>
         /// Project scope constructor.
         /// </summary>
-        public AutofacProjectScope(Func<ILifetimeScope> lifetimeScopeFactory)
+        /// <param name="lifetimeScopeFactory">Autofac lifetime scope factory func.</param>
+        /// <param name="connectionDisposalCallbacks">Optional <see cref="ConnectionDisposalCallbacks"/> instance.</param>
+        public AutofacProjectScope(Func<ILifetimeScope> lifetimeScopeFactory, ConnectionDisposalCallbacks connectionDisposalCallbacks = null)
+            : base(connectionDisposalCallbacks)
         {
             if (lifetimeScopeFactory == null) throw new ArgumentNullException(nameof(lifetimeScopeFactory));
             _lifetimeScope = lifetimeScopeFactory();

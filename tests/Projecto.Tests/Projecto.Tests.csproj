@@ -56,6 +56,7 @@
     <Compile Include="ProjectionTests.cs" />
     <Compile Include="ProjectorBuilderTests.cs" />
     <Compile Include="ProjectorTests.cs" />
+    <Compile Include="ProjectScopeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestClasses\Connections.cs" />
     <Compile Include="TestClasses\FakeConnection.cs" />
