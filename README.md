@@ -25,16 +25,16 @@ Inherit from `Projection<TConnection, TProjectContext>` to define a projection, 
 ```csharp
 public class UserProfileProjection : Projection<ApplicationDbContext, MyProjectContext>
 {
-	public ExampleProjection()
-	{
-		When<CreatedUserProfileEvent>(async (dataContext, projectContext, @event) =>
-		{
-			dataContext.UserProfiles.Add(...);
+    public ExampleProjection()
+    {
+        When<CreatedUserProfileEvent>(async (dataContext, projectContext, @event) =>
+        {
+            dataContext.UserProfiles.Add(...);
 
-			// Data can be saved directly or during collection disposal for batching queries (see `ProjectScope`)
-			await dataContext.SaveChangesAsync();
-		});
-	}
+            // Data can be saved directly or during collection disposal for batching queries (see `ProjectScope`)
+            await dataContext.SaveChangesAsync();
+        });
+    }
 }
 ```
 
@@ -58,9 +58,9 @@ The `ProjectorBuilder` class is used to build a projector instance.
 var disposalCallbacks = new ExampleCollectionDisposalCallbacks();
 
 var projector = new ProjectorBuilder()
-	.Register(new ExampleProjection())
-	.SetProjectScopeFactory((projectContext, message) => new ExampleProjectScope(disposalCallbacks))
-	.Build();
+    .Register(new ExampleProjection())
+    .SetProjectScopeFactory((projectContext, message) => new ExampleProjectScope(disposalCallbacks))
+    .Build();
 ```
 
 ### ProjectScope
@@ -71,31 +71,31 @@ The project scope can be used to manage the lifetime of a connections.
 ```csharp
 public class ExampleCollectionDisposalCallbacks : ConnectionDisposalCallbacks
 {
-	public ExampleCollectionDisposalCallbacks()
-	{
-		BeforeDisposalOf<ApplicationDbContext>(async dataContext =>
-		{
-			await dataContext.SaveChangesAsync();
-		});
-	}
+    public ExampleCollectionDisposalCallbacks()
+    {
+        BeforeDisposalOf<ApplicationDbContext>(async dataContext =>
+        {
+            await dataContext.SaveChangesAsync();
+        });
+    }
 }
 
 public class ExampleProjectScope : ProjectScope
 {
-	public ExampleProjectScope(ConnectionDisposalCallbacks disposalCallbacks)
-		: base(disposalCallbacks)
-	{
-	}
+    public ExampleProjectScope(ConnectionDisposalCallbacks disposalCallbacks)
+        : base(disposalCallbacks)
+    {
+    }
 
-	public override void Dispose()
-	{
-		// Called when the project scope gets disposed
-	}
+    public override void Dispose()
+    {
+        // Called when the project scope gets disposed
+    }
 
-	public override object ResolveConnection(Type connectionType)
-	{
-		if (connectionType == typeof(ApplicationDbContext)) return new ApplicationDbContext();
-		throw new Exception($"Can't resolve unknown connection type {connectionType.Name}");
-	}
+    public override object ResolveConnection(Type connectionType)
+    {
+        if (connectionType == typeof(ApplicationDbContext)) return new ApplicationDbContext();
+        throw new Exception($"Can't resolve unknown connection type {connectionType.Name}");
+    }
 }
 ```
