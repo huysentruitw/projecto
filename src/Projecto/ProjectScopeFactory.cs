@@ -14,14 +14,16 @@
  * limitations under the License.
  */
 
+using System.Collections.Generic;
+
 namespace Projecto
 {
     /// <summary>
     /// Project scope factory delegate.
     /// </summary>
     /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
-    /// <param name="messageEnveloope">The message instance.</param>
+    /// <param name="messageEnveloopes">The message envelopes currently being projected.</param>
     /// <returns>A project scope instance.</returns>
-    public delegate ProjectScope ProjectScopeFactory<in TMessageEnvelope>(TMessageEnvelope messageEnveloope)
+    public delegate ProjectScope ProjectScopeFactory<in TMessageEnvelope>(IEnumerable<TMessageEnvelope> messageEnveloopes)
         where TMessageEnvelope : MessageEnvelope;
 }

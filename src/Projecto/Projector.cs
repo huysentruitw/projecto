@@ -66,37 +66,55 @@ namespace Projecto
         /// <summary>
         /// Project a message to all registered projections.
         /// </summary>
-        /// <param name="sequenceNumber">The sequence number of the message.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        public Task Project(int sequenceNumber, TMessageEnvelope messageEnvelope) => Project(sequenceNumber, messageEnvelope, CancellationToken.None);
+        public Task Project(TMessageEnvelope messageEnvelope) => Project(messageEnvelope, CancellationToken.None);
 
         /// <summary>
         /// Project a message to all registered projections with cancellation support.
         /// </summary>
-        /// <param name="sequenceNumber">The sequence number of the message.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        public async Task Project(int sequenceNumber, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken)
-        {
-            if (sequenceNumber != NextSequenceNumber) throw new ArgumentOutOfRangeException(nameof(sequenceNumber), sequenceNumber, $"Expecting sequence {NextSequenceNumber}");
+        public Task Project(TMessageEnvelope messageEnvelope, CancellationToken cancellationToken) => Project(new[] { messageEnvelope }, cancellationToken);
 
-            using (var scope = _projectScopeFactory(messageEnvelope))
+        /// <summary>
+        /// Projects multiple messages to all registered projections.
+        /// </summary>
+        /// <param name="messageEnvelopes">The message envelopes.</param>
+        /// <returns>A <see cref="Task"/> for async execution.</returns>
+        public Task Project(IEnumerable<TMessageEnvelope> messageEnvelopes) => Project(messageEnvelopes, CancellationToken.None);
+
+        /// <summary>
+        /// Projects multiple messages to all registered projections with cancellation support.
+        /// </summary>
+        /// <param name="messageEnvelopes">The message envelopes.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A <see cref="Task"/> for async execution.</returns>
+        public async Task Project(IEnumerable<TMessageEnvelope> messageEnvelopes, CancellationToken cancellationToken)
+        {
+            using (var scope = _projectScopeFactory(messageEnvelopes))
             {
-                foreach (var projection in _projections.Where(x => x.NextSequenceNumber == sequenceNumber))
+                foreach (var messageEnvelope in messageEnvelopes)
                 {
-                    await projection.Handle(type => scope.InternalResolveConnection(type), messageEnvelope, cancellationToken).ConfigureAwait(false);
-                    if (cancellationToken.IsCancellationRequested) return;
-                    if (projection.NextSequenceNumber != sequenceNumber + 1)
-                        throw new InvalidOperationException(
-                            $"Projection {projection.GetType()} did not increment NextSequence ({sequenceNumber}) after processing event {messageEnvelope.GetType()}");
+                    if (messageEnvelope.SequenceNumber != NextSequenceNumber)
+                        throw new ArgumentOutOfRangeException(nameof(messageEnvelope.SequenceNumber), 
+                            $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {NextSequenceNumber}");
+
+                    foreach (var projection in _projections.Where(x => x.NextSequenceNumber == messageEnvelope.SequenceNumber))
+                    {
+                        await projection.Handle(type => scope.InternalResolveConnection(type), messageEnvelope, cancellationToken).ConfigureAwait(false);
+                        if (cancellationToken.IsCancellationRequested) return;
+                        if (projection.NextSequenceNumber != messageEnvelope.SequenceNumber + 1)
+                            throw new InvalidOperationException(
+                                $"Projection {projection.GetType()} did not increment NextSequence ({messageEnvelope.SequenceNumber}) after processing message {messageEnvelope.Message.GetType()}");
+                    }
+
+                    _nextSequenceNumber++;
                 }
 
                 await scope.BeforeDispose().ConfigureAwait(false);
             }
-
-            _nextSequenceNumber++;
         }
     }
 }

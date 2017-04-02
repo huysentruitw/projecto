@@ -52,16 +52,16 @@ namespace Projecto.Autofac.Tests
             var container = services.Build();
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
-            var scope = projector.ProjectScopeFactory(new FakeMessageEnvelope(new FakeMessage()));
+            var scope = projector.ProjectScopeFactory(new[] { new FakeMessageEnvelope(1, new FakeMessage()) });
             Assert.That(scope.GetType(), Is.EqualTo(typeof(AutofacProjectScope)));
         }
 
         [Test]
         public async Task UseAutofac_ProjectMessage_ShouldResolveConnection()
         {
-            var messageEnvelope = new FakeMessageEnvelope(new FakeMessage());
-
             var sequence = 1;
+            var messageEnvelope = new FakeMessageEnvelope(sequence, new FakeMessage());
+
             var projectionMock = new Mock<IProjection<FakeMessageEnvelope>>();
             projectionMock.Setup(x => x.NextSequenceNumber).Returns(() => sequence);
             projectionMock
@@ -90,7 +90,7 @@ namespace Projecto.Autofac.Tests
             var container = services.Build();
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
-            await projector.Project(1, messageEnvelope);
+            await projector.Project(messageEnvelope);
 
             projectionMock.Verify(x => x.Handle(
                 It.IsAny<Func<Type, object>>(),

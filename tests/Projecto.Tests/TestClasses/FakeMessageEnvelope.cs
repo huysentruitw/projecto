@@ -4,9 +4,9 @@ namespace Projecto.Tests.TestClasses
 {
     public class FakeMessageEnvelope : MessageEnvelope
     {
-        public FakeMessageEnvelope(object message)
+        public FakeMessageEnvelope(int sequenceNumber, object message)
+            : base(sequenceNumber, message)
         {
-            Message = message;
         }
 
         public string OriginatingCommandId { get; } = Guid.NewGuid().ToString("N");

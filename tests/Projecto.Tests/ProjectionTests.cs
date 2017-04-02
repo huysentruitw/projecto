@@ -30,7 +30,7 @@ namespace Projecto.Tests
         {
             IProjection<FakeMessageEnvelope> projection = new TestProjection(5);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(5));
-            await projection.Handle(_ => new FakeConnection(), new FakeMessageEnvelope(new MessageA()), CancellationToken.None);
+            await projection.Handle(_ => new FakeConnection(), new FakeMessageEnvelope(5, new MessageA()), CancellationToken.None);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(6));
         }
 
@@ -41,8 +41,8 @@ namespace Projecto.Tests
             var token = new CancellationToken();
             var messageA = new MessageA();
             var messageB = new MessageB();
-            var messageEnvelopeA = new FakeMessageEnvelope(messageA);
-            var messageEnvelopeB = new FakeMessageEnvelope(messageB);
+            var messageEnvelopeA = new FakeMessageEnvelope(1, messageA);
+            var messageEnvelopeB = new FakeMessageEnvelope(2, messageB);
 
             IProjection<FakeMessageEnvelope> projection = new TestProjection();
             projection.Handle(_ => connectionMock.Object, messageEnvelopeA, token);
