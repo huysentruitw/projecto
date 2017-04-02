@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConnectionDisposalCallbacks.cs" />
+    <Compile Include="MessageEnvelope.cs" />
     <Compile Include="ProjectScope.cs" />
     <Compile Include="ProjectScopeFactory.cs" />
     <Compile Include="Infrastructure\IProjection.cs" />

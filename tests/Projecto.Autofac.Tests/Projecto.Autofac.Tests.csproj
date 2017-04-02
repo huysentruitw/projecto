@@ -61,7 +61,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestClasses\FakeConnection.cs" />
     <Compile Include="TestClasses\FakeMessage.cs" />
-    <Compile Include="TestClasses\FakeProjectContext.cs" />
+    <Compile Include="TestClasses\FakeMessageEnvelope.cs" />
     <Compile Include="TestClasses\FakeProjections.cs" />
   </ItemGroup>
   <ItemGroup>

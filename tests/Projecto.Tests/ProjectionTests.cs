@@ -28,9 +28,9 @@ namespace Projecto.Tests
         [Test]
         public async Task NextSequence_HandleMessage_ShouldIncrementNextSequence()
         {
-            IProjection<FakeProjectContext> projection = new TestProjection(5);
+            IProjection<FakeMessageEnvelope> projection = new TestProjection(5);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(5));
-            await projection.Handle(_ => new FakeConnection(), new FakeProjectContext(), new MessageA(), CancellationToken.None);
+            await projection.Handle(_ => new FakeConnection(), new FakeMessageEnvelope(new MessageA()), CancellationToken.None);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(6));
         }
 
@@ -41,15 +41,15 @@ namespace Projecto.Tests
             var token = new CancellationToken();
             var messageA = new MessageA();
             var messageB = new MessageB();
-            var contextA = new FakeProjectContext();
-            var contextB = new FakeProjectContext();
+            var messageEnvelopeA = new FakeMessageEnvelope(messageA);
+            var messageEnvelopeB = new FakeMessageEnvelope(messageB);
 
-            IProjection<FakeProjectContext> projection = new TestProjection();
-            projection.Handle(_ => connectionMock.Object, contextA, messageA, token);
-            projection.Handle(_ => connectionMock.Object, contextB, messageB, token);
+            IProjection<FakeMessageEnvelope> projection = new TestProjection();
+            projection.Handle(_ => connectionMock.Object, messageEnvelopeA, token);
+            projection.Handle(_ => connectionMock.Object, messageEnvelopeB, token);
 
-            connectionMock.Verify(x => x.UpdateA(contextA, messageA), Times.Once);
-            connectionMock.Verify(x => x.UpdateB(contextB, messageB, token), Times.Once);
+            connectionMock.Verify(x => x.UpdateA(messageEnvelopeA, messageA), Times.Once);
+            connectionMock.Verify(x => x.UpdateB(messageEnvelopeB, messageB, token), Times.Once);
 
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(3));
         }

@@ -21,7 +21,7 @@ namespace Projecto.Autofac.Tests
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
             services.RegisterType<FakeProjectionB>().AsImplementedInterfaces().SingleInstance();
 
-            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>()
+            services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterFromAutofac(ctx)
                 .UseAutofacProjectScopeFactory(ctx)
                 .Build())
@@ -30,7 +30,7 @@ namespace Projecto.Autofac.Tests
 
             var container = services.Build();
 
-            var projector = container.Resolve<Projector<FakeProjectContext>>();
+            var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
             Assert.That(projector.Projections.Length, Is.EqualTo(2));
             Assert.That(projector.Projections.SingleOrDefault(x => x.GetType() == typeof(FakeProjectionA)), Is.Not.Null);
             Assert.That(projector.Projections.SingleOrDefault(x => x.GetType() == typeof(FakeProjectionB)), Is.Not.Null);
@@ -42,7 +42,7 @@ namespace Projecto.Autofac.Tests
             var services = new ContainerBuilder();
 
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
-            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>()
+            services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterFromAutofac(ctx)
                 .UseAutofacProjectScopeFactory(ctx)
                 .Build())
@@ -51,24 +51,23 @@ namespace Projecto.Autofac.Tests
 
             var container = services.Build();
 
-            var projector = container.Resolve<Projector<FakeProjectContext>>();
-            var scope = projector.ProjectScopeFactory(new FakeProjectContext(), new FakeMessage());
+            var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
+            var scope = projector.ProjectScopeFactory(new FakeMessageEnvelope(new FakeMessage()));
             Assert.That(scope.GetType(), Is.EqualTo(typeof(AutofacProjectScope)));
         }
 
         [Test]
         public async Task UseAutofac_ProjectMessage_ShouldResolveConnection()
         {
-            var message = new FakeMessage();
-            var projectContext = new FakeProjectContext();
+            var messageEnvelope = new FakeMessageEnvelope(new FakeMessage());
 
             var sequence = 1;
-            var projectionMock = new Mock<IProjection<FakeProjectContext>>();
+            var projectionMock = new Mock<IProjection<FakeMessageEnvelope>>();
             projectionMock.Setup(x => x.NextSequenceNumber).Returns(() => sequence);
             projectionMock
-                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), projectContext, message, It.IsAny<CancellationToken>()))
-                .Callback<Func<Type, object>, FakeProjectContext, object, CancellationToken>(
-                    (resolver, _, __, ___) =>
+                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
+                .Callback<Func<Type, object>, FakeMessageEnvelope, CancellationToken>(
+                    (resolver, _, __) =>
                     {
                         var connection = resolver(typeof(FakeConnection));
                         Assert.That(connection, Is.Not.Null);
@@ -81,7 +80,7 @@ namespace Projecto.Autofac.Tests
 
             services.RegisterType<FakeConnection>().AsSelf().InstancePerLifetimeScope();
             services.RegisterInstance(projectionMock.Object).AsImplementedInterfaces().SingleInstance();
-            services.Register(ctx => new ProjectorBuilder<FakeProjectContext>()
+            services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterFromAutofac(ctx)
                 .UseAutofacProjectScopeFactory(ctx)
                 .Build())
@@ -90,13 +89,12 @@ namespace Projecto.Autofac.Tests
 
             var container = services.Build();
 
-            var projector = container.Resolve<Projector<FakeProjectContext>>();
-            await projector.Project(1, projectContext, message);
+            var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
+            await projector.Project(1, messageEnvelope);
 
             projectionMock.Verify(x => x.Handle(
                 It.IsAny<Func<Type, object>>(),
-                It.IsAny<FakeProjectContext>(),
-                It.IsAny<object>(),
+                It.IsAny<FakeMessageEnvelope>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
     }

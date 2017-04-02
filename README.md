@@ -12,22 +12,22 @@ Managed .NET (C#) library for handling CQRS/ES projections while maintaining the
 
 ## Concepts / usage
 
-### ProjectContext
+### MessageEnvelope
 
-A project context is a user-defined context object which is passed to `projector.Project()` method which in turn passes it to the `When<>()` handler inside the projection.
+A message envelope is a user-defined object (must derive from MessageEnvelope) that wraps a message before it is passed to `projector.Project()` which in turn passes the envelope to the `When<>()` handler inside the projection.
 
-It's a convenient way to pass out-of-band data to the handler (f.e. the originating command id, or creation date of the event/message). It could also be used to share data between different projections.
+It's a convenient way to pass out-of-band data to the handler (f.e. the originating command id, or creation date of the event/message).
 
 ### Projection
 
-Inherit from `Projection<TConnection, TProjectContext>` to define a projection, where `TConnection` is the connection type used by the projection and `TProjectContext` is the user-defined context object (see previous topic).
+Inherit from `Projection<TConnection, TMessageEnvelope>` to define a projection, where `TConnection` is the connection type used by the projection and `TMessageEnvelope` is the user-defined message envelope object (see previous topic).
 
 ```csharp
-public class UserProfileProjection : Projection<ApplicationDbContext, MyProjectContext>
+public class UserProfileProjection : Projection<ApplicationDbContext, MyMessageEnvelope>
 {
     public ExampleProjection()
     {
-        When<CreatedUserProfileEvent>(async (dataContext, projectContext, @event) =>
+        When<CreatedUserProfileEvent>(async (dataContext, envelope, @event) =>
         {
             dataContext.UserProfiles.Add(...);
 
@@ -59,7 +59,7 @@ var disposalCallbacks = new ExampleCollectionDisposalCallbacks();
 
 var projector = new ProjectorBuilder()
     .Register(new ExampleProjection())
-    .SetProjectScopeFactory((projectContext, message) => new ExampleProjectScope(disposalCallbacks))
+    .SetProjectScopeFactory(messageEnvelope => new ExampleProjectScope(disposalCallbacks))
     .Build();
 ```
 

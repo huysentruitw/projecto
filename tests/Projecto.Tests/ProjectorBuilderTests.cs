@@ -9,28 +9,28 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectorBuilderTests
     {
-        private readonly ProjectScopeFactory<FakeProjectContext> _projectScopeFactory = (_, __) => new FakeProjectScope();
+        private readonly ProjectScopeFactory<FakeMessageEnvelope> _projectScopeFactory = _ => new FakeProjectScope();
 
         [Test]
         public void Register_PassingNullAsProjection_ShouldThrowException()
         {
-            var builder = new ProjectorBuilder<FakeProjectContext>();
-            var ex = Assert.Throws<ArgumentNullException>(() => builder.Register((IProjection<FakeProjectContext>)null));
+            var builder = new ProjectorBuilder<FakeMessageEnvelope>();
+            var ex = Assert.Throws<ArgumentNullException>(() => builder.Register((IProjection<FakeMessageEnvelope>)null));
             Assert.That(ex.ParamName, Is.EqualTo("projection"));
         }
 
         [Test]
         public void Register_PassingNullAsMultipleProjections_ShouldThrowException()
         {
-            var builder = new ProjectorBuilder<FakeProjectContext>();
-            var ex = Assert.Throws<ArgumentNullException>(() => builder.Register((Projection<FakeConnection, FakeProjectContext>[])null));
+            var builder = new ProjectorBuilder<FakeMessageEnvelope>();
+            var ex = Assert.Throws<ArgumentNullException>(() => builder.Register((Projection<FakeConnection, FakeMessageEnvelope>[])null));
             Assert.That(ex.ParamName, Is.EqualTo("projections"));
         }
 
         [Test]
         public void SetProjectScopeFactory_PassingNullAsProjectScopeFactory_ShouldThrowException()
         {
-            var builder = new ProjectorBuilder<FakeProjectContext>();
+            var builder = new ProjectorBuilder<FakeMessageEnvelope>();
             var ex = Assert.Throws<ArgumentNullException>(() => builder.SetProjectScopeFactory(null));
             Assert.That(ex.ParamName, Is.EqualTo("projectScopeFactory"));
         }
@@ -39,7 +39,7 @@ namespace Projecto.Tests
         public void Build_WithSingleProjectionRegistered_ShouldGetPassedToProjectorInstance()
         {
             var projection = new TestProjection();
-            var builder = new ProjectorBuilder<FakeProjectContext>();
+            var builder = new ProjectorBuilder<FakeMessageEnvelope>();
             builder.Register(projection).SetProjectScopeFactory(_projectScopeFactory);
 
             var projector = builder.Build();
@@ -50,9 +50,9 @@ namespace Projecto.Tests
         [Test]
         public void Build_WithMultipleProjectionsRegistered_ShouldGetPassedToProjectorInstance()
         {
-            var projectScopeFactory = new Mock<ProjectScopeFactory<FakeProjectContext>>().Object;
+            var projectScopeFactory = new Mock<ProjectScopeFactory<FakeMessageEnvelope>>().Object;
             var projections = new[] {new TestProjection(), new TestProjection()};
-            var builder = new ProjectorBuilder<FakeProjectContext>();
+            var builder = new ProjectorBuilder<FakeMessageEnvelope>();
             builder.Register(projections).SetProjectScopeFactory(projectScopeFactory);
 
             var projector = builder.Build();
@@ -65,7 +65,7 @@ namespace Projecto.Tests
         public void Build_WithCertainProjectScopeFactory_ShouldGetPassedToProjectorInstance()
         {
             var projection = new TestProjection();
-            var builder = new ProjectorBuilder<FakeProjectContext>();
+            var builder = new ProjectorBuilder<FakeMessageEnvelope>();
             builder.Register(projection).SetProjectScopeFactory(_projectScopeFactory);
 
             var projector = builder.Build();

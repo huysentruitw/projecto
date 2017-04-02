@@ -19,9 +19,9 @@ namespace Projecto
     /// <summary>
     /// Project scope factory delegate.
     /// </summary>
-    /// <typeparam name="TProjectContext">The type of the project context (custom information being passed to the handler).</typeparam>
-    /// <param name="projectContext">The <see cref="Projector{TProjectContext}"/> instance.</param>
-    /// <param name="message">The message instance.</param>
+    /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
+    /// <param name="messageEnveloope">The message instance.</param>
     /// <returns>A project scope instance.</returns>
-    public delegate ProjectScope ProjectScopeFactory<in TProjectContext>(TProjectContext projectContext, object message);
+    public delegate ProjectScope ProjectScopeFactory<in TMessageEnvelope>(TMessageEnvelope messageEnveloope)
+        where TMessageEnvelope : MessageEnvelope;
 }

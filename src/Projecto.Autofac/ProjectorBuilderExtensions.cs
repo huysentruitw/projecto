@@ -22,21 +22,22 @@ using Projecto.Infrastructure;
 namespace Projecto.Autofac
 {
     /// <summary>
-    /// <see cref="ProjectorBuilder{TProjectContext}"/> extension methods.
+    /// <see cref="ProjectorBuilder{TMessageEnvelope}"/> extension methods.
     /// </summary>
     public static class ProjectorBuilderExtensions
     {
         /// <summary>
-        /// Registers all projections that are registered as <see cref="IProjection{TProjectContext}"/> on the Autofac container.
+        /// Registers all projections that are registered as <see cref="IProjection{TMessageEnvelope}"/> on the Autofac container.
         /// </summary>
-        /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
+        /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
         /// <param name="builder">The builder.</param>
         /// <param name="componentContext">The Autofac component context.</param>
-        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public static ProjectorBuilder<TProjectContext>
-            RegisterFromAutofac<TProjectContext>(this ProjectorBuilder<TProjectContext> builder, IComponentContext componentContext)
+        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        public static ProjectorBuilder<TMessageEnvelope>
+            RegisterFromAutofac<TMessageEnvelope>(this ProjectorBuilder<TMessageEnvelope> builder, IComponentContext componentContext)
+            where TMessageEnvelope : MessageEnvelope
         {
-            var projections = componentContext.Resolve<IEnumerable<IProjection<TProjectContext>>>();
+            var projections = componentContext.Resolve<IEnumerable<IProjection<TMessageEnvelope>>>();
             builder.Register(projections);
             return builder;
         }
@@ -44,16 +45,17 @@ namespace Projecto.Autofac
         /// <summary>
         /// Configures the builder to resolve requested connection instances from the Autofac component scope.
         /// </summary>
-        /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
+        /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
         /// <param name="builder">The builder.</param>
         /// <param name="componentContext">The Autofac component context.</param>
         /// <param name="connectionDisposalCallbacks">Optional <see cref="ConnectionDisposalCallbacks"/> instance.</param>
-        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public static ProjectorBuilder<TProjectContext>
-            UseAutofacProjectScopeFactory<TProjectContext>(this ProjectorBuilder<TProjectContext> builder, IComponentContext componentContext, ConnectionDisposalCallbacks connectionDisposalCallbacks = null)
+        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        public static ProjectorBuilder<TMessageEnvelope>
+            UseAutofacProjectScopeFactory<TMessageEnvelope>(this ProjectorBuilder<TMessageEnvelope> builder, IComponentContext componentContext, ConnectionDisposalCallbacks connectionDisposalCallbacks = null)
+            where TMessageEnvelope : MessageEnvelope
         {
             var lifetimeScopeFactory = componentContext.Resolve<Func<ILifetimeScope>>();
-            builder.SetProjectScopeFactory((_, __) => new AutofacProjectScope(() => lifetimeScopeFactory().BeginLifetimeScope(), connectionDisposalCallbacks));
+            builder.SetProjectScopeFactory(_ => new AutofacProjectScope(() => lifetimeScopeFactory().BeginLifetimeScope(), connectionDisposalCallbacks));
             return builder;
         }
     }

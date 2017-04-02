@@ -26,18 +26,18 @@ namespace Projecto
     /// Base class for projections.
     /// </summary>
     /// <typeparam name="TConnection">The type of the connection (f.e. DbContext or ElasticClient).</typeparam>
-    /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
-    public abstract class Projection<TConnection, TProjectContext> : IProjection<TProjectContext>
+    /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
+    public abstract class Projection<TConnection, TMessageEnvelope> : IProjection<TMessageEnvelope>
+        where TMessageEnvelope : MessageEnvelope
     {
         /// <summary>
         /// Handler signature.
         /// </summary>
         /// <param name="connection">The connection object.</param>
-        /// <param name="context">The project context (used to pass custom information to the handler).</param>
-        /// <param name="message">The message.</param>
+        /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        private delegate Task Handler(TConnection connection, TProjectContext context, object message, CancellationToken cancellationToken);
+        private delegate Task Handler(TConnection connection, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
 
         private int? _nextSequenceNumber = null;
         private readonly Dictionary<Type, Handler> _handlers = new Dictionary<Type, Handler>();
@@ -49,7 +49,7 @@ namespace Projecto
 
         /// <summary>
         /// Fetch the initial <see cref="NextSequenceNumber"/> value needed by this projection.
-        /// This method is only called once during startup, so make sure this projection is only registered with one <see cref="Projector{TProjectContext}"/>.
+        /// This method is only called once during startup, so make sure this projection is only registered with one <see cref="Projector{TMessageEnvelope}"/>.
         /// Override this method to fetch the sequence number from persistent storage.
         /// </summary>
         /// <returns>The next sequence number. Defaults to 1.</returns>
@@ -66,32 +66,31 @@ namespace Projecto
         /// </summary>
         /// <typeparam name="TMessage">The message type.</typeparam>
         /// <param name="handler">The message handler.</param>
-        protected void When<TMessage>(Func<TConnection, TProjectContext, TMessage, Task> handler)
-            => _handlers.Add(typeof(TMessage), (connection, context, message, cancellationToken) => handler(connection, context, (TMessage)message));
+        protected void When<TMessage>(Func<TConnection, TMessageEnvelope, TMessage, Task> handler)
+            => _handlers.Add(typeof(TMessage), (connection, messageEnvelope, cancellationToken) => handler(connection, messageEnvelope, (TMessage)messageEnvelope.Message));
 
         /// <summary>
         /// Registers a cancellable message handler for a given message type.
         /// </summary>
         /// <typeparam name="TMessage">The message type.</typeparam>
         /// <param name="handler">The message handler.</param>
-        protected void When<TMessage>(Func<TConnection, TProjectContext, TMessage, CancellationToken, Task> handler)
-            => _handlers.Add(typeof(TMessage), (connection, context, message, cancellationToken) => handler(connection, context, (TMessage)message, cancellationToken));
+        protected void When<TMessage>(Func<TConnection, TMessageEnvelope, TMessage, CancellationToken, Task> handler)
+            => _handlers.Add(typeof(TMessage), (connection, messageEnvelope, cancellationToken) => handler(connection, messageEnvelope, (TMessage)messageEnvelope.Message, cancellationToken));
 
         /// <summary>
         /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
         /// </summary>
         /// <param name="connectionResolver">The connection resolver.</param>
-        /// <param name="context">The project context (used to pass custom information to the handler).</param>
-        /// <param name="message">The message.</param>
+        /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        async Task IProjection<TProjectContext>.Handle(Func<Type, object> connectionResolver, TProjectContext context, object message, CancellationToken cancellationToken)
+        async Task IProjection<TMessageEnvelope>.Handle(Func<Type, object> connectionResolver, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken)
         {
             Handler handler;
-            if (_handlers.TryGetValue(message.GetType(), out handler))
+            if (_handlers.TryGetValue(messageEnvelope.Message.GetType(), out handler))
             {
                 var connection = (TConnection) connectionResolver(typeof(TConnection));
-                await handler(connection, context, message, cancellationToken).ConfigureAwait(false);
+                await handler(connection, messageEnvelope, cancellationToken).ConfigureAwait(false);
             }
 
             IncrementNextSequenceNumber();

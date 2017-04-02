@@ -21,10 +21,11 @@ using System.Threading.Tasks;
 namespace Projecto.Infrastructure
 {
     /// <summary>
-    /// Interface for Projections.
+    /// Interface for projections.
     /// </summary>
-    /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
-    public interface IProjection<in TProjectContext>
+    /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
+    public interface IProjection<in TMessageEnvelope>
+        where TMessageEnvelope : MessageEnvelope
     {
         /// <summary>
         /// Gets the next event sequence number needed by this projection.
@@ -35,10 +36,9 @@ namespace Projecto.Infrastructure
         /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
         /// </summary>
         /// <param name="connectionResolver">The connection resolver.</param>
-        /// <param name="context">The project context (used to pass custom information to the handler).</param>
-        /// <param name="message">The message.</param>
+        /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        Task Handle(Func<Type, object> connectionResolver, TProjectContext context, object message, CancellationToken cancellationToken);
+        Task Handle(Func<Type, object> connectionResolver, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
     }
 }

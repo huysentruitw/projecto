@@ -23,7 +23,7 @@ namespace Projecto
 {
     /// <summary>
     /// Abstract class that defines a project scope.
-    /// A project scope is created for each call to <see cref="Projector{TProjectContext}.Project(int, TProjectContext, object, CancellationToken)"/> method, the scope gets disposed before leaving the method.
+    /// A project scope is created for each call to <see cref="Projector{TMessageEnvelope}.Project(int, TMessageEnvelope, CancellationToken)"/> method, the scope gets disposed before leaving the method.
     /// </summary>
     public abstract class ProjectScope : IDisposable
     {

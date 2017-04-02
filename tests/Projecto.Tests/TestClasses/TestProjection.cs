@@ -1,6 +1,6 @@
 ﻿namespace Projecto.Tests.TestClasses
 {
-    public class TestProjection : Projection<FakeConnection, FakeProjectContext>
+    public class TestProjection : Projection<FakeConnection, FakeMessageEnvelope>
     {
         private readonly int? _initialNextSequence;
 

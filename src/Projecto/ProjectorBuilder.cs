@@ -21,20 +21,21 @@ using Projecto.Infrastructure;
 namespace Projecto
 {
     /// <summary>
-    /// Builder for constructing a <see cref="Projector{TProjectContext}"/> instance.
+    /// Builder for constructing a <see cref="Projector{TMessageEnvelope}"/> instance.
     /// </summary>
-    /// <typeparam name="TProjectContext">The type of the project context (used to pass custom information to the handler).</typeparam>
-    public class ProjectorBuilder<TProjectContext>
+    /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
+    public class ProjectorBuilder<TMessageEnvelope>
+        where TMessageEnvelope : MessageEnvelope
     {
-        private readonly HashSet<IProjection<TProjectContext>> _projections = new HashSet<IProjection<TProjectContext>>();
-        private ProjectScopeFactory<TProjectContext> _projectScopeFactory;
+        private readonly HashSet<IProjection<TMessageEnvelope>> _projections = new HashSet<IProjection<TMessageEnvelope>>();
+        private ProjectScopeFactory<TMessageEnvelope> _projectScopeFactory;
 
         /// <summary>
         /// Registers a projection.
         /// </summary>
         /// <param name="projection">The projection to register.</param>
-        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> Register(IProjection<TProjectContext> projection)
+        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        public ProjectorBuilder<TMessageEnvelope> Register(IProjection<TMessageEnvelope> projection)
         {
             if (projection == null) throw new ArgumentNullException(nameof(projection));
             if (_projections.Contains(projection)) throw new ArgumentException("Projection already registered", nameof(projection));
@@ -46,8 +47,8 @@ namespace Projecto
         /// Registers multiple projections.
         /// </summary>
         /// <param name="projections">The projections.</param>
-        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> Register(IEnumerable<IProjection<TProjectContext>> projections)
+        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        public ProjectorBuilder<TMessageEnvelope> Register(IEnumerable<IProjection<TMessageEnvelope>> projections)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             foreach (var projection in projections) Register(projection);
@@ -58,8 +59,8 @@ namespace Projecto
         /// Sets the project scope factory.
         /// </summary>
         /// <param name="projectScopeFactory">The project scope factory.</param>
-        /// <returns><see cref="ProjectorBuilder{TProjectContext}"/> for method chaining.</returns>
-        public ProjectorBuilder<TProjectContext> SetProjectScopeFactory(ProjectScopeFactory<TProjectContext> projectScopeFactory)
+        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        public ProjectorBuilder<TMessageEnvelope> SetProjectScopeFactory(ProjectScopeFactory<TMessageEnvelope> projectScopeFactory)
         {
             if (projectScopeFactory == null) throw new ArgumentNullException(nameof(projectScopeFactory));
             _projectScopeFactory = projectScopeFactory;
@@ -67,9 +68,9 @@ namespace Projecto
         }
 
         /// <summary>
-        /// Build a <see cref="Projector{TProjectContext}"/> instance.
+        /// Build a <see cref="Projector{TMessageEnvelope}"/> instance.
         /// </summary>
-        /// <returns>The <see cref="Projector{TProjectContext}"/> instance.</returns>
-        public Projector<TProjectContext> Build() => new Projector<TProjectContext>(_projections, _projectScopeFactory);
+        /// <returns>The <see cref="Projector{TMessageEnvelope}"/> instance.</returns>
+        public Projector<TMessageEnvelope> Build() => new Projector<TMessageEnvelope>(_projections, _projectScopeFactory);
     }
 }
