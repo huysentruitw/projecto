@@ -22,24 +22,27 @@ It's a convenient way to pass out-of-band data to the handler (f.e. the originat
 
 Inherit from `Projection<TConnection, TProjectContext>` to define a projection, where `TConnection` is the connection type used by the projection and `TProjectContext` is the user-defined context object (see previous topic).
 
-	public class UserProfileProjection : Projection<ApplicationDbContext, MyProjectContext>
+```csharp
+public class UserProfileProjection : Projection<ApplicationDbContext, MyProjectContext>
+{
+	public ExampleProjection()
 	{
-		public ExampleProjection()
+		When<CreatedUserProfileEvent>(async (dataContext, projectContext, @event) =>
 		{
-			When<CreatedUserProfileEvent>(async (dataContext, projectContext, @event) =>
-			{
-				dataContext.UserProfiles.Add(...);
+			dataContext.UserProfiles.Add(...);
 
-				await dataContext.SaveChangesAsync();
-			});
-		}
+			// Data can be saved directly or during collection disposal for batching queries (see `ProjectScope`)
+			await dataContext.SaveChangesAsync();
+		});
 	}
+}
+```
 
 The above projection is a simple example that does not override the `FetchNextSequenceNumber` and `IncrementNextSequenceNumber` method. If you want to persist the next event sequence number, you'll have to override those methods and fetch/store the sequence number from your store.
 
 ### Projector
 
-The projector reflects the minimum sequence number of all registered projections.
+The projector reflects the sequence number of the most out-dated projection.
 
 Use the projector to project a single event/message to all registered projections.
 
@@ -47,12 +50,52 @@ The projector ensures that it only handles an event/message if the sequence numb
 
 The `NextSequenceNumber` of the projector can be used by the application to request a resend of missing events/messages during startup.
 
-The create a projector, you'll need to use the `ProjectorBuilder` class.
+The `ProjectorBuilder` class is used to build a projector instance.
 
 ### ProjectorBuilder
 
-...
+```csharp
+var disposalCallbacks = new ExampleCollectionDisposalCallbacks();
+
+var projector = new ProjectorBuilder()
+	.Register(new ExampleProjection())
+	.SetProjectScopeFactory((projectContext, message) => new ExampleProjectScope(disposalCallbacks))
+	.Build();
+```
 
 ### ProjectScope
 
-...
+A project scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `ProjectScopeFactory` to create a disposable `ProjectScope`.
+The project scope can be used to manage the lifetime of a connections.
+
+```csharp
+public class ExampleCollectionDisposalCallbacks : ConnectionDisposalCallbacks
+{
+	public ExampleCollectionDisposalCallbacks()
+	{
+		BeforeDisposalOf<ApplicationDbContext>(async dataContext =>
+		{
+			await dataContext.SaveChangesAsync();
+		});
+	}
+}
+
+public class ExampleProjectScope : ProjectScope
+{
+	public ExampleProjectScope(ConnectionDisposalCallbacks disposalCallbacks)
+		: base(disposalCallbacks)
+	{
+	}
+
+	public override void Dispose()
+	{
+		// Called when the project scope gets disposed
+	}
+
+	public override object ResolveConnection(Type connectionType)
+	{
+		if (connectionType == typeof(ApplicationDbContext)) return new ApplicationDbContext();
+		throw new Exception($"Can't resolve unknown connection type {connectionType.Name}");
+	}
+}
+```
