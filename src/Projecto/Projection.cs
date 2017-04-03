@@ -43,6 +43,11 @@ namespace Projecto
         private readonly Dictionary<Type, Handler> _handlers = new Dictionary<Type, Handler>();
 
         /// <summary>
+        /// Gets the type of the connection required by this projection.
+        /// </summary>
+        public Type ConnectionType => typeof(TConnection);
+
+        /// <summary>
         /// Gets the next event sequence number needed by this projection.
         /// </summary>
         public int NextSequenceNumber => _nextSequenceNumber ?? (int)(_nextSequenceNumber = FetchNextSequenceNumber());

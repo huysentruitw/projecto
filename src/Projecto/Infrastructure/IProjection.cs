@@ -28,6 +28,11 @@ namespace Projecto.Infrastructure
         where TMessageEnvelope : MessageEnvelope
     {
         /// <summary>
+        /// Gets the type of the connection required by this projection.
+        /// </summary>
+        Type ConnectionType { get; }
+
+        /// <summary>
         /// Gets the next event sequence number needed by this projection.
         /// </summary>
         int NextSequenceNumber { get; }
