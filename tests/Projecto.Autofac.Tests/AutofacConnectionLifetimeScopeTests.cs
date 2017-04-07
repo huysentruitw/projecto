@@ -3,7 +3,7 @@
 namespace Projecto.Autofac.Tests
 {
     [TestFixture]
-    public class AutofacProjectScopeTests
+    public class AutofacConnectionLifetimeScopeTests
     {
     }
 }

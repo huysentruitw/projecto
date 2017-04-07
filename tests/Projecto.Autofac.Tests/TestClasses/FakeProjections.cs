@@ -1,6 +1,4 @@
-﻿using System.Threading.Tasks;
-
-namespace Projecto.Autofac.Tests.TestClasses
+﻿namespace Projecto.Autofac.Tests.TestClasses
 {
     public class FakeProjectionA : Projection<FakeConnection, FakeMessageEnvelope> { }
 

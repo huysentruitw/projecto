@@ -47,7 +47,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutofacProjectScope.cs" />
+    <Compile Include="AutofacConnectionLifetimeScopeFactory.cs" />
+    <Compile Include="AutofacConnectionLifetimeScope.cs" />
     <Compile Include="ProjectorBuilderExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

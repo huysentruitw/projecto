@@ -56,7 +56,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="AutofacProjectScopeTests.cs" />
+    <Compile Include="AutofacConnectionLifetimeScopeTests.cs" />
     <Compile Include="ProjectorBuilderExtensionsTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TestClasses\FakeConnection.cs" />

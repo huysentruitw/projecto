@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
-using Projecto.Infrastructure;
 using Projecto.Tests.TestClasses;
 
 namespace Projecto.Tests
@@ -30,7 +29,7 @@ namespace Projecto.Tests
         {
             IProjection<FakeMessageEnvelope> projection = new TestProjection(5);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(5));
-            await projection.Handle(_ => new FakeConnection(), new FakeMessageEnvelope(5, new MessageA()), CancellationToken.None);
+            await projection.Handle(() => new FakeConnection(), new FakeMessageEnvelope(5, new MessageA()), CancellationToken.None);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(6));
         }
 
@@ -45,8 +44,8 @@ namespace Projecto.Tests
             var messageEnvelopeB = new FakeMessageEnvelope(2, messageB);
 
             IProjection<FakeMessageEnvelope> projection = new TestProjection();
-            projection.Handle(_ => connectionMock.Object, messageEnvelopeA, token);
-            projection.Handle(_ => connectionMock.Object, messageEnvelopeB, token);
+            projection.Handle(() => connectionMock.Object, messageEnvelopeA, token);
+            projection.Handle(() => connectionMock.Object, messageEnvelopeB, token);
 
             connectionMock.Verify(x => x.UpdateA(messageEnvelopeA, messageA), Times.Once);
             connectionMock.Verify(x => x.UpdateB(messageEnvelopeB, messageB, token), Times.Once);

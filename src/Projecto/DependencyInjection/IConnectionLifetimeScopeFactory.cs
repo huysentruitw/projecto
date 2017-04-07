@@ -14,16 +14,17 @@
  * limitations under the License.
  */
 
-using System.Collections.Generic;
-
-namespace Projecto
+namespace Projecto.DependencyInjection
 {
     /// <summary>
-    /// Project scope factory delegate.
+    /// Interface that defines the connection lifetime scope factory.
     /// </summary>
-    /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
-    /// <param name="messageEnveloopes">The message envelopes currently being projected.</param>
-    /// <returns>A project scope instance.</returns>
-    public delegate ProjectScope ProjectScopeFactory<in TMessageEnvelope>(IEnumerable<TMessageEnvelope> messageEnveloopes)
-        where TMessageEnvelope : MessageEnvelope;
+    public interface IConnectionLifetimeScopeFactory
+    {
+        /// <summary>
+        /// Creates a new <see cref="IConnectionLifetimeScope"/> instance.
+        /// </summary>
+        /// <returns>A <see cref="IConnectionLifetimeScope"/> instance.</returns>
+        IConnectionLifetimeScope BeginLifetimeScope();
+    }
 }

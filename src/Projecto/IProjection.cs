@@ -18,7 +18,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Projecto.Infrastructure
+namespace Projecto
 {
     /// <summary>
     /// Interface for projections.
@@ -40,10 +40,10 @@ namespace Projecto.Infrastructure
         /// <summary>
         /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
         /// </summary>
-        /// <param name="connectionResolver">The connection resolver.</param>
+        /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        Task Handle(Func<Type, object> connectionResolver, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
+        Task Handle(Func<object> connectionFactory, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
     }
 }

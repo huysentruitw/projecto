@@ -18,7 +18,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using Projecto.Infrastructure;
 
 namespace Projecto
 {
@@ -85,16 +84,16 @@ namespace Projecto
         /// <summary>
         /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
         /// </summary>
-        /// <param name="connectionResolver">The connection resolver.</param>
+        /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        async Task IProjection<TMessageEnvelope>.Handle(Func<Type, object> connectionResolver, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken)
+        async Task IProjection<TMessageEnvelope>.Handle(Func<object> connectionFactory, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken)
         {
             Handler handler;
             if (_handlers.TryGetValue(messageEnvelope.Message.GetType(), out handler))
             {
-                var connection = (TConnection) connectionResolver(typeof(TConnection));
+                var connection = (TConnection)connectionFactory();
                 await handler(connection, messageEnvelope, cancellationToken).ConfigureAwait(false);
             }
 

@@ -6,7 +6,6 @@ using Autofac;
 using Moq;
 using NUnit.Framework;
 using Projecto.Autofac.Tests.TestClasses;
-using Projecto.Infrastructure;
 
 namespace Projecto.Autofac.Tests
 {
@@ -22,8 +21,8 @@ namespace Projecto.Autofac.Tests
             services.RegisterType<FakeProjectionB>().AsImplementedInterfaces().SingleInstance();
 
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
-                .RegisterFromAutofac(ctx)
-                .UseAutofacProjectScopeFactory(ctx)
+                .RegisterProjectionsFromAutofac(ctx)
+                .UseAutofacConnectionLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -37,14 +36,14 @@ namespace Projecto.Autofac.Tests
         }
 
         [Test]
-        public void UseAutofac_CallingProjectScopeFactory_ShouldCreateAutofacProjectScope()
+        public void UseAutofac_CallingConnectionLifetimeScopeFactory_ShouldCreateAutofacConnectionLifetimeScope()
         {
             var services = new ContainerBuilder();
 
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
-                .RegisterFromAutofac(ctx)
-                .UseAutofacProjectScopeFactory(ctx)
+                .RegisterProjectionsFromAutofac(ctx)
+                .UseAutofacConnectionLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -52,8 +51,8 @@ namespace Projecto.Autofac.Tests
             var container = services.Build();
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
-            var scope = projector.ProjectScopeFactory(new[] { new FakeMessageEnvelope(1, new FakeMessage()) });
-            Assert.That(scope.GetType(), Is.EqualTo(typeof(AutofacProjectScope)));
+            var scope = projector.ConnectionLifetimeScopeFactory.BeginLifetimeScope();
+            Assert.That(scope.GetType(), Is.EqualTo(typeof(AutofacConnectionLifetimeScope)));
         }
 
         [Test]
@@ -63,13 +62,14 @@ namespace Projecto.Autofac.Tests
             var messageEnvelope = new FakeMessageEnvelope(sequence, new FakeMessage());
 
             var projectionMock = new Mock<IProjection<FakeMessageEnvelope>>();
-            projectionMock.Setup(x => x.NextSequenceNumber).Returns(() => sequence);
+            projectionMock.SetupGet(x => x.NextSequenceNumber).Returns(() => sequence);
+            projectionMock.SetupGet(x => x.ConnectionType).Returns(typeof(FakeConnection));
             projectionMock
-                .Setup(x => x.Handle(It.IsAny<Func<Type, object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
-                .Callback<Func<Type, object>, FakeMessageEnvelope, CancellationToken>(
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
+                .Callback<Func<object>, FakeMessageEnvelope, CancellationToken>(
                     (resolver, _, __) =>
                     {
-                        var connection = resolver(typeof(FakeConnection));
+                        var connection = resolver();
                         Assert.That(connection, Is.Not.Null);
                         Assert.That(connection.GetType(), Is.EqualTo(typeof(FakeConnection)));
                         sequence++;
@@ -81,8 +81,8 @@ namespace Projecto.Autofac.Tests
             services.RegisterType<FakeConnection>().AsSelf().InstancePerLifetimeScope();
             services.RegisterInstance(projectionMock.Object).AsImplementedInterfaces().SingleInstance();
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
-                .RegisterFromAutofac(ctx)
-                .UseAutofacProjectScopeFactory(ctx)
+                .RegisterProjectionsFromAutofac(ctx)
+                .UseAutofacConnectionLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -93,7 +93,7 @@ namespace Projecto.Autofac.Tests
             await projector.Project(messageEnvelope);
 
             projectionMock.Verify(x => x.Handle(
-                It.IsAny<Func<Type, object>>(),
+                It.IsAny<Func<object>>(),
                 It.IsAny<FakeMessageEnvelope>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }

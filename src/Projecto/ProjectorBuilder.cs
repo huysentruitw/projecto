@@ -16,7 +16,7 @@
 
 using System;
 using System.Collections.Generic;
-using Projecto.Infrastructure;
+using Projecto.DependencyInjection;
 
 namespace Projecto
 {
@@ -28,7 +28,7 @@ namespace Projecto
         where TMessageEnvelope : MessageEnvelope
     {
         private readonly HashSet<IProjection<TMessageEnvelope>> _projections = new HashSet<IProjection<TMessageEnvelope>>();
-        private ProjectScopeFactory<TMessageEnvelope> _projectScopeFactory;
+        private IConnectionLifetimeScopeFactory _connectionLifetimeScopeFactory;
 
         /// <summary>
         /// Registers a projection.
@@ -56,14 +56,14 @@ namespace Projecto
         }
 
         /// <summary>
-        /// Sets the project scope factory.
+        /// Sets the connection lifetime scope factory.
         /// </summary>
-        /// <param name="projectScopeFactory">The project scope factory.</param>
+        /// <param name="factory">The connection lifetime scope factory.</param>
         /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
-        public ProjectorBuilder<TMessageEnvelope> SetProjectScopeFactory(ProjectScopeFactory<TMessageEnvelope> projectScopeFactory)
+        public ProjectorBuilder<TMessageEnvelope> SetConnectionLifetimeScopeFactory(IConnectionLifetimeScopeFactory factory)
         {
-            if (projectScopeFactory == null) throw new ArgumentNullException(nameof(projectScopeFactory));
-            _projectScopeFactory = projectScopeFactory;
+            if (factory == null) throw new ArgumentNullException(nameof(factory));
+            _connectionLifetimeScopeFactory = factory;
             return this;
         }
 
@@ -71,6 +71,6 @@ namespace Projecto
         /// Build a <see cref="Projector{TMessageEnvelope}"/> instance.
         /// </summary>
         /// <returns>The <see cref="Projector{TMessageEnvelope}"/> instance.</returns>
-        public Projector<TMessageEnvelope> Build() => new Projector<TMessageEnvelope>(_projections, _projectScopeFactory);
+        public Projector<TMessageEnvelope> Build() => new Projector<TMessageEnvelope>(_projections, _connectionLifetimeScopeFactory);
     }
 }
