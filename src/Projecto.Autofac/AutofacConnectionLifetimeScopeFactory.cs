@@ -25,16 +25,16 @@ namespace Projecto.Autofac
     /// </summary>
     internal class AutofacConnectionLifetimeScopeFactory : IConnectionLifetimeScopeFactory
     {
-        private readonly Func<ILifetimeScope> _createAutofacLifetimeScope;
+        private readonly Func<ILifetimeScope> _autofacLifetimeScopeFactory;
 
         /// <summary>
         /// Constructs a new <see cref="AutofacConnectionLifetimeScopeFactory"/> instance.
         /// </summary>
-        /// <param name="createAutofacLifetimeScope"></param>
-        public AutofacConnectionLifetimeScopeFactory(Func<ILifetimeScope> createAutofacLifetimeScope)
+        /// <param name="autofacLifetimeScopeFactory">Factory func for creating an Autofac lifetime scope.</param>
+        public AutofacConnectionLifetimeScopeFactory(Func<ILifetimeScope> autofacLifetimeScopeFactory)
         {
-            if (createAutofacLifetimeScope == null) throw new ArgumentNullException(nameof(createAutofacLifetimeScope));
-            _createAutofacLifetimeScope = createAutofacLifetimeScope;
+            if (autofacLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(autofacLifetimeScopeFactory));
+            _autofacLifetimeScopeFactory = autofacLifetimeScopeFactory;
         }
 
         /// <summary>
@@ -43,7 +43,7 @@ namespace Projecto.Autofac
         /// <returns>A connection lifetime scope.</returns>
         public IConnectionLifetimeScope BeginLifetimeScope()
         {
-            var connectionLifetimeScope = new AutofacConnectionLifetimeScope(_createAutofacLifetimeScope());
+            var connectionLifetimeScope = new AutofacConnectionLifetimeScope(_autofacLifetimeScopeFactory());
             connectionLifetimeScope.ConnectionResolved += e => ChildScopeConnectionResolved?.Invoke(e);
             connectionLifetimeScope.ScopeEnding += e => ChildScopeEnding?.Invoke(e);
             return connectionLifetimeScope;

@@ -44,11 +44,10 @@ namespace Projecto.Autofac
         /// </summary>
         public void Dispose()
         {
-            if (!_disposed)
-            {
-                ScopeEnding?.Invoke(new ConnectionLifetimeScopeEndingEventArgs(this));
-                _lifetimeScope.Dispose();
-            }
+            if (_disposed) return;
+            ScopeEnding?.Invoke(new ConnectionLifetimeScopeEndingEventArgs(this));
+            _lifetimeScope.Dispose();
+            _disposed = true;
         }
 
         /// <summary>
