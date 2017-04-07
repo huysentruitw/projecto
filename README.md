@@ -44,9 +44,9 @@ The above projection is a simple example that does not override the `FetchNextSe
 
 The projector reflects the sequence number of the most out-dated projection.
 
-Use the projector to project a single event/message to all registered projections.
+Use the projector to project one or more events/messages to all registered projections.
 
-The projector ensures that it only handles an event/message if the sequence number is equal to `NextSequenceNumber`.
+The projector ensures that it only handles events/messages in the correct order, starting with event/message with a sequence number equal to `NextSequenceNumber`.
 
 The `NextSequenceNumber` of the projector can be used by the application to request a resend of missing events/messages during startup.
 
@@ -59,40 +59,36 @@ var disposalCallbacks = new ExampleCollectionDisposalCallbacks();
 
 var projector = new ProjectorBuilder()
     .Register(new ExampleProjection())
-    .SetProjectScopeFactory(messageEnvelope => new ExampleProjectScope(disposalCallbacks))
+    .SetConnectionLifetimeScopeFactory(new ExampleConnectionLifetimeScopeFactory())
     .Build();
 ```
 
-### ProjectScope
+### ConnectionLifetimeScope
 
-A project scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `ProjectScopeFactory` to create a disposable `ProjectScope`.
-The project scope can be used to manage the lifetime of a connections.
+A connection lifetime scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `ConnectionLifetimeScopeFactory` to create a disposable `ConnectionLifetimeScope`.
+The connection lifetime scope can be used to manage the lifetime of connections.
 
 ```csharp
-public class ExampleCollectionDisposalCallbacks : ConnectionDisposalCallbacks
+public class ExampleConnectionLifetimeScopeFactory : IConnectionLifetimeScopeFactory
 {
-    public ExampleCollectionDisposalCallbacks()
+    public IConnectionLifetimeScope BeginLifetimeScope()
     {
-        BeforeDisposalOf<ApplicationDbContext>(async dataContext =>
-        {
-            await dataContext.SaveChangesAsync();
-        });
+        return new ExampleConnectionLifetimeScope();
     }
 }
 
-public class ExampleProjectScope : ProjectScope
+public class ExampleConnectionLifetimeScope : IConnectionLifetimeScope
 {
-    public ExampleProjectScope(ConnectionDisposalCallbacks disposalCallbacks)
-        : base(disposalCallbacks)
+    public ExampleProjectScope()
     {
     }
 
-    public override void Dispose()
+    public void Dispose()
     {
         // Called when the project scope gets disposed
     }
 
-    public override object ResolveConnection(Type connectionType)
+    public object ResolveConnection(Type connectionType)
     {
         if (connectionType == typeof(ApplicationDbContext)) return new ApplicationDbContext();
         throw new Exception($"Can't resolve unknown connection type {connectionType.Name}");
