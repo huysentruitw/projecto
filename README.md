@@ -65,8 +65,7 @@ var projector = new ProjectorBuilder()
 
 ### ConnectionLifetimeScope
 
-A connection lifetime scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `ConnectionLifetimeScopeFactory` to create a disposable `ConnectionLifetimeScope`.
-The connection lifetime scope can be used to manage the lifetime of connections.
+A connection lifetime scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `ConnectionLifetimeScopeFactory` to create a disposable `ConnectionLifetimeScope`. The connection lifetime scope is responsible for resolving connections as needed by one or more projections and has `ScopeEnded` and `ConnectionResolved` events to have more control over the lifetime of the used connection(s).
 
 ```csharp
 public class ExampleConnectionLifetimeScopeFactory : IConnectionLifetimeScopeFactory
