@@ -53,7 +53,8 @@ namespace Projecto.Autofac
             where TMessageEnvelope : MessageEnvelope
         {
             var lifetimeScopeFactory = componentContext.Resolve<Func<ILifetimeScope>>();
-            builder.SetConnectionLifetimeScopeFactory(new AutofacConnectionLifetimeScopeFactory(lifetimeScopeFactory));
+            Func<ILifetimeScope> childLifetimeScopeFactory = () => lifetimeScopeFactory().BeginLifetimeScope();
+            builder.SetConnectionLifetimeScopeFactory(new AutofacConnectionLifetimeScopeFactory(childLifetimeScopeFactory));
             return builder;
         }
     }

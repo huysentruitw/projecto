@@ -97,5 +97,29 @@ namespace Projecto.Autofac.Tests
                 It.IsAny<FakeMessageEnvelope>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }
+
+        [Test]
+        public void UseAutofacConnectionLifetimeScopeFactory_DisposeConnectionScope_ShouldNotDisposeParentAutofacLifetimeScope()
+        {
+            var services = new ContainerBuilder();
+
+            services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
+            services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
+                .RegisterProjectionsFromAutofac(ctx)
+                .UseAutofacConnectionLifetimeScopeFactory(ctx)
+                .Build())
+                .AsSelf()
+                .SingleInstance();
+
+            var container = services.Build();
+
+            var autofacLifetimeScopeDisposed = false;
+            container.CurrentScopeEnding += (sender, args) => autofacLifetimeScopeDisposed = true;
+
+            var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
+            projector.ConnectionLifetimeScopeFactory.BeginLifetimeScope().Dispose();
+
+            Assert.That(autofacLifetimeScopeDisposed, Is.False);
+        }
     }
 }
