@@ -1,6 +1,8 @@
 ﻿namespace Projecto.Tests.TestClasses
 {
-    public class MessageA { }
+    public class RegisteredMessageA { }
 
-    public class MessageB { }
+    public class RegisteredMessageB { }
+
+    public class UnregisteredMessage { }
 }

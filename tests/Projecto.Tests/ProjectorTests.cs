@@ -71,7 +71,7 @@ namespace Projecto.Tests
         [Test]
         public void Project_MessageWithWrongSequenceNumber_ShouldThrowException()
         {
-            var messageEnvelope = new FakeMessageEnvelope(2, new MessageA());
+            var messageEnvelope = new FakeMessageEnvelope(2, new RegisteredMessageA());
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(5);
             _projectionMocks[1].SetupGet(x => x.NextSequenceNumber).Returns(6);
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(3);
@@ -85,7 +85,7 @@ namespace Projecto.Tests
         [Test]
         public void Project_ProjectionDoesntIncrementSequenceNumber_ShouldThrowException()
         {
-            var messageEnvelope = new FakeMessageEnvelope(3, new MessageA());
+            var messageEnvelope = new FakeMessageEnvelope(3, new RegisteredMessageA());
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(5);
             _projectionMocks[1].SetupGet(x => x.NextSequenceNumber).Returns(6);
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(3);
@@ -100,7 +100,7 @@ namespace Projecto.Tests
         public async Task Project_MessageWithCorrectSequenceNumber_ShouldIncrementSequenceNumber()
         {
             var nextSequence = 3;
-            var messageEnvelope = new FakeMessageEnvelope(nextSequence, new MessageA());
+            var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(5);
             _projectionMocks[1].SetupGet(x => x.NextSequenceNumber).Returns(6);
             _projectionMocks[2].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequence);
@@ -119,7 +119,7 @@ namespace Projecto.Tests
         [Test]
         public async Task Project_MessageWithCorrectSequenceNumber_ShouldCallHandleMethodOfProjectionsWithMatchingSequenceNumber()
         {
-            var message = new MessageA();
+            var message = new RegisteredMessageA();
             var nextSequences = new[] { 5, 6, 5 };
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequences[0]);
             _projectionMocks[0]
@@ -166,7 +166,7 @@ namespace Projecto.Tests
         public async Task Project_CancelMessageWithCorrectSequenceNumber_ShouldCancelHandlerAndNotThrowSequenceNumberException()
         {
             var sequenceNumber = 10;
-            var messageEnvelope = new FakeMessageEnvelope(sequenceNumber, new MessageA());
+            var messageEnvelope = new FakeMessageEnvelope(sequenceNumber, new RegisteredMessageA());
             var isCancelled = false;
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => sequenceNumber);
             _projectionMocks[0]
@@ -191,7 +191,7 @@ namespace Projecto.Tests
         public async Task Project_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeConnectionLifetimeScopeInCorrectOrder()
         {
             var nextSequence = 5;
-            var messageEnvelope = new FakeMessageEnvelope(nextSequence, new MessageA());
+            var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
             var connectionType = typeof(ConnectionA);
 
             _projectionMocks[0].SetupGet(x => x.NextSequenceNumber).Returns(() => nextSequence);

@@ -29,7 +29,7 @@ namespace Projecto.Tests
         {
             IProjection<FakeMessageEnvelope> projection = new TestProjection(5);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(5));
-            await projection.Handle(() => new FakeConnection(), new FakeMessageEnvelope(5, new MessageA()), CancellationToken.None);
+            await projection.Handle(() => new FakeConnection(), new FakeMessageEnvelope(5, new RegisteredMessageA()), CancellationToken.None);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(6));
         }
 
@@ -38,8 +38,8 @@ namespace Projecto.Tests
         {
             var connectionMock = new Mock<FakeConnection>();
             var token = new CancellationToken();
-            var messageA = new MessageA();
-            var messageB = new MessageB();
+            var messageA = new RegisteredMessageA();
+            var messageB = new RegisteredMessageB();
             var messageEnvelopeA = new FakeMessageEnvelope(1, messageA);
             var messageEnvelopeB = new FakeMessageEnvelope(2, messageB);
 
@@ -51,6 +51,34 @@ namespace Projecto.Tests
             connectionMock.Verify(x => x.UpdateB(messageEnvelopeB, messageB, token), Times.Once);
 
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(3));
+        }
+
+        [Test]
+        public void Handle_MessageWithRegisteredHandler_ShouldCallIncrementNextSequenceNumberMethodWithMessageHandledByProjectionSetToTrue()
+        {
+            var projectionMock = new Mock<TestProjection>(null) { CallBase = true };
+            projectionMock.Setup(x => x.MockIncrementSequenceNumber(It.IsAny<bool>()));
+            var registeredMessageEnvelope = new FakeMessageEnvelope(1, new RegisteredMessageA());
+
+            IProjection<FakeMessageEnvelope> projection = projectionMock.Object;
+            projection.Handle(() => new FakeConnection(), registeredMessageEnvelope, CancellationToken.None);
+
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(true), Times.Once);
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(false), Times.Never);
+        }
+
+        [Test]
+        public void Handle_MessageWithoutRegisteredHandler_ShouldCallIncrementNextSequenceNumberMethodWithMessageHandledByProjectionSetToFalse()
+        {
+            var projectionMock = new Mock<TestProjection>(null) { CallBase = true };
+            projectionMock.Setup(x => x.MockIncrementSequenceNumber(It.IsAny<bool>()));
+            var unregisteredMessageEnvelope = new FakeMessageEnvelope(1, new UnregisteredMessage());
+
+            IProjection<FakeMessageEnvelope> projection = projectionMock.Object;
+            projection.Handle(() => new FakeConnection(), unregisteredMessageEnvelope, CancellationToken.None);
+
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(true), Times.Never);
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(false), Times.Once);
         }
     }
 }

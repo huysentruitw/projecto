@@ -63,7 +63,9 @@ namespace Projecto
         /// Increment the <see cref="NextSequenceNumber"/> number.
         /// Override this method if you want to persist the new sequence number.
         /// </summary>
-        protected virtual void IncrementNextSequenceNumber() => _nextSequenceNumber = NextSequenceNumber + 1;
+        /// <param name="messageHandledByProjection">True when the message causing the increment was actually handled by the projection. False when the message causing the increment was not handled by the projection.</param>
+        protected virtual void IncrementNextSequenceNumber(bool messageHandledByProjection)
+            => _nextSequenceNumber = NextSequenceNumber + 1;
 
         /// <summary>
         /// Registers a message handler for a given message type.
@@ -91,13 +93,15 @@ namespace Projecto
         async Task IProjection<TMessageEnvelope>.Handle(Func<object> connectionFactory, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken)
         {
             Handler handler;
+            bool messageHandled = false;
             if (_handlers.TryGetValue(messageEnvelope.Message.GetType(), out handler))
             {
                 var connection = (TConnection)connectionFactory();
                 await handler(connection, messageEnvelope, cancellationToken).ConfigureAwait(false);
+                messageHandled = true;
             }
 
-            IncrementNextSequenceNumber();
+            IncrementNextSequenceNumber(messageHandled);
         }
     }
 }

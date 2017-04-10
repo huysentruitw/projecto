@@ -8,11 +8,19 @@
         {
             _initialNextSequence = initialNextSequence;
 
-            When<MessageA>((conn, ctx, msg) => conn.UpdateA(ctx, msg));
+            When<RegisteredMessageA>((conn, ctx, msg) => conn.UpdateA(ctx, msg));
 
-            When<MessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
+            When<RegisteredMessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
         }
 
+        public virtual void MockIncrementSequenceNumber(bool messageHandledByProjection) { }
+
         protected override int FetchNextSequenceNumber() => _initialNextSequence ?? base.FetchNextSequenceNumber();
+
+        protected override void IncrementNextSequenceNumber(bool messageHandledByProjection)
+        {
+            base.IncrementNextSequenceNumber(messageHandledByProjection);
+            MockIncrementSequenceNumber(messageHandledByProjection);
+        }
     }
 }
