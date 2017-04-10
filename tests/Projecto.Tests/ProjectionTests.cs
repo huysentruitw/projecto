@@ -25,7 +25,7 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public async Task NextSequence_HandleMessage_ShouldIncrementNextSequence()
+        public async Task Handle_SomeMessage_ShouldIncrementNextSequence()
         {
             IProjection<FakeMessageEnvelope> projection = new TestProjection(5);
             Assert.That(projection.NextSequenceNumber, Is.EqualTo(5));
@@ -34,7 +34,7 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void When_HandleMessages_ShouldCallCorrectHandlerWithCorrectArguments()
+        public void Handle_TwoDifferentMessages_ShouldCallCorrectHandlerWithCorrectArguments()
         {
             var connectionMock = new Mock<FakeConnection>();
             var token = new CancellationToken();
