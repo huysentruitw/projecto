@@ -38,7 +38,7 @@ namespace Projecto
         /// <returns>A <see cref="Task"/> for async execution.</returns>
         private delegate Task Handler(TConnection connection, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
 
-        private int? _nextSequenceNumber = null;
+        private int? _nextSequenceNumber;
         private readonly Dictionary<Type, Handler> _handlers = new Dictionary<Type, Handler>();
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using NUnit.Framework;
 using Projecto.Autofac.Tests.TestClasses;
@@ -7,6 +8,7 @@ using Projecto.DependencyInjection;
 namespace Projecto.Autofac.Tests
 {
     [TestFixture]
+    [SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
     public class AutofacConnectionLifetimeScopeFactoryTests
     {
         private Func<ILifetimeScope> _autofacLifetimeScopeFactory;

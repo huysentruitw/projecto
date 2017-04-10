@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -96,6 +97,7 @@ namespace Projecto
         /// </summary>
         /// <param name="messageEnvelopes">The message envelopes.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
+        [SuppressMessage("ReSharper", "UnusedMember.Global")]
         public Task Project(TMessageEnvelope[] messageEnvelopes) => Project(messageEnvelopes, CancellationToken.None);
 
         /// <summary>
@@ -104,6 +106,7 @@ namespace Projecto
         /// <param name="messageEnvelopes">The message envelopes.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
+        [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
         public async Task Project(TMessageEnvelope[] messageEnvelopes, CancellationToken cancellationToken)
         {
             if (!_nextSequenceNumber.HasValue) GetNextSequenceNumber();

@@ -27,7 +27,7 @@ namespace Projecto.Autofac
     internal class AutofacConnectionLifetimeScope : IConnectionLifetimeScope
     {
         private readonly ILifetimeScope _lifetimeScope;
-        private bool _disposed = false;
+        private bool _disposed;
 
         /// <summary>
         /// Creates a new <see cref="AutofacConnectionLifetimeScope"/> instance.

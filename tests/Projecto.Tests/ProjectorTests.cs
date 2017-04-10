@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -11,6 +12,7 @@ using Projecto.Tests.TestClasses;
 namespace Projecto.Tests
 {
     [TestFixture]
+    [SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
     public class ProjectorTests
     {
         private readonly Mock<IConnectionLifetimeScopeFactory> _factoryMock;
@@ -173,6 +175,7 @@ namespace Projecto.Tests
                 .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
                 .Returns<object, FakeMessageEnvelope, CancellationToken>((_, __, token) =>
                 {
+                    // ReSharper disable once MethodSupportsCancellation
                     return Task.Run(() =>
                     {
                         Thread.Sleep(20);
@@ -232,6 +235,7 @@ namespace Projecto.Tests
                     return scopeMock.Object;
                 });
 
+            // ReSharper disable once MethodSupportsCancellation
             await projector.Project(messageEnvelope);
 
             Assert.That(executionOrder, Is.EqualTo(3));

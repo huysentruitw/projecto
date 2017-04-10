@@ -90,6 +90,7 @@ namespace Projecto.Autofac.Tests
             var container = services.Build();
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
+            // ReSharper disable once MethodSupportsCancellation
             await projector.Project(messageEnvelope);
 
             projectionMock.Verify(x => x.Handle(

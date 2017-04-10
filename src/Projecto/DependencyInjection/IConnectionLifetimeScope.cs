@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Projecto.DependencyInjection
 {
@@ -27,6 +28,7 @@ namespace Projecto.DependencyInjection
         /// <summary>
         /// Property dictionary for sharing data between different event handlers.
         /// </summary>
+        [SuppressMessage("ReSharper", "UnusedMemberInSuper.Global")]
         IDictionary<object, object> Properties { get; }
 
         /// <summary>
@@ -39,11 +41,13 @@ namespace Projecto.DependencyInjection
         /// <summary>
         /// Event triggered when a connection was resolved from the lifetime scope.
         /// </summary>
+        [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
         event ConnectionResolvedEvent ConnectionResolved;
 
         /// <summary>
         /// Event triggered when the lifetime scope is about to end (right before disposal).
         /// </summary>
+        [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
         event ConnectionLifetimeScopeEndingEvent ScopeEnding;
     }
 }

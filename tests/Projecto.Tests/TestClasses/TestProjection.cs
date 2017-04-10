@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Projecto.Tests.TestClasses
 {
+    [SuppressMessage("ReSharper", "UnusedParameter.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     public class TestProjection : Projection<FakeConnection, FakeMessageEnvelope>
     {
         private readonly int? _initialNextSequence;
