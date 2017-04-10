@@ -49,10 +49,10 @@ namespace Projecto
         /// <summary>
         /// Gets the next event sequence number needed by this projection.
         /// </summary>
-        public int NextSequenceNumber => _nextSequenceNumber ?? (int)(_nextSequenceNumber = FetchNextSequenceNumber());
+        public int GetNextSequenceNumber() => _nextSequenceNumber ?? (int)(_nextSequenceNumber = FetchNextSequenceNumber());
 
         /// <summary>
-        /// Fetch the initial <see cref="NextSequenceNumber"/> value needed by this projection.
+        /// Fetch the initial next sequence number, returned by <see cref="GetNextSequenceNumber"/>, needed by this projection.
         /// This method is only called once during startup, so make sure this projection is only registered with one <see cref="Projector{TMessageEnvelope}"/>.
         /// Override this method to fetch the sequence number from persistent storage.
         /// </summary>
@@ -60,12 +60,12 @@ namespace Projecto
         protected virtual int FetchNextSequenceNumber() => 1;
 
         /// <summary>
-        /// Increment the <see cref="NextSequenceNumber"/> number.
+        /// Increment the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
         /// Override this method if you want to persist the new sequence number.
         /// </summary>
         /// <param name="messageHandledByProjection">True when the message causing the increment was actually handled by the projection. False when the message causing the increment was not handled by the projection.</param>
         protected virtual void IncrementNextSequenceNumber(bool messageHandledByProjection)
-            => _nextSequenceNumber = NextSequenceNumber + 1;
+            => _nextSequenceNumber = GetNextSequenceNumber() + 1;
 
         /// <summary>
         /// Registers a message handler for a given message type.
@@ -84,7 +84,7 @@ namespace Projecto
             => _handlers.Add(typeof(TMessage), (connection, messageEnvelope, cancellationToken) => handler(connection, messageEnvelope, (TMessage)messageEnvelope.Message, cancellationToken));
 
         /// <summary>
-        /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
+        /// Passes a message to a matching handler and increments the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageEnvelope">The message envelope.</param>

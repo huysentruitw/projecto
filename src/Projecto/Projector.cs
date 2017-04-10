@@ -61,7 +61,7 @@ namespace Projecto
         /// <summary>
         /// Gets the next event sequence number needed by the most out-dated registered projection.
         /// </summary>
-        public int NextSequenceNumber => _nextSequenceNumber ?? (int)(_nextSequenceNumber = _projections.Select(x => x.NextSequenceNumber).Min());
+        public int NextSequenceNumber => _nextSequenceNumber ?? (int)(_nextSequenceNumber = _projections.Select(x => x.GetNextSequenceNumber()).Min());
 
         /// <summary>
         /// Project a message to all registered projections.
@@ -101,11 +101,11 @@ namespace Projecto
                         throw new ArgumentOutOfRangeException(nameof(messageEnvelope.SequenceNumber), 
                             $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {NextSequenceNumber}");
 
-                    foreach (var projection in _projections.Where(x => x.NextSequenceNumber == messageEnvelope.SequenceNumber))
+                    foreach (var projection in _projections.Where(x => x.GetNextSequenceNumber() == messageEnvelope.SequenceNumber))
                     {
                         await projection.Handle(() => scope.ResolveConnection(projection.ConnectionType), messageEnvelope, cancellationToken).ConfigureAwait(false);
                         if (cancellationToken.IsCancellationRequested) return;
-                        if (projection.NextSequenceNumber != messageEnvelope.SequenceNumber + 1)
+                        if (projection.GetNextSequenceNumber() != messageEnvelope.SequenceNumber + 1)
                             throw new InvalidOperationException(
                                 $"Projection {projection.GetType()} did not increment NextSequence ({messageEnvelope.SequenceNumber}) after processing message {messageEnvelope.Message.GetType()}");
                     }
