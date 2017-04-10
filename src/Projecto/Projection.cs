@@ -49,23 +49,30 @@ namespace Projecto
         /// <summary>
         /// Gets the next event sequence number needed by this projection.
         /// </summary>
-        public int GetNextSequenceNumber() => _nextSequenceNumber ?? (int)(_nextSequenceNumber = FetchNextSequenceNumber());
+        /// <param name="connectionFactory">The connection factory.</param>
+        public int GetNextSequenceNumber(Func<object> connectionFactory)
+        {
+            if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
+            return (int) (_nextSequenceNumber = FetchNextSequenceNumber(connectionFactory));
+        }
 
         /// <summary>
         /// Fetch the initial next sequence number, returned by <see cref="GetNextSequenceNumber"/>, needed by this projection.
         /// This method is only called once during startup, so make sure this projection is only registered with one <see cref="Projector{TMessageEnvelope}"/>.
         /// Override this method to fetch the sequence number from persistent storage.
         /// </summary>
+        /// <param name="connectionFactory">The connection factory.</param>
         /// <returns>The next sequence number. Defaults to 1.</returns>
-        protected virtual int FetchNextSequenceNumber() => 1;
+        protected virtual int FetchNextSequenceNumber(Func<object> connectionFactory) => 1;
 
         /// <summary>
         /// Increment the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
         /// Override this method if you want to persist the new sequence number.
         /// </summary>
+        /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageHandledByProjection">True when the message causing the increment was actually handled by the projection. False when the message causing the increment was not handled by the projection.</param>
-        protected virtual void IncrementNextSequenceNumber(bool messageHandledByProjection)
-            => _nextSequenceNumber = GetNextSequenceNumber() + 1;
+        protected virtual void IncrementNextSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection)
+            => _nextSequenceNumber = GetNextSequenceNumber(connectionFactory) + 1;
 
         /// <summary>
         /// Registers a message handler for a given message type.
@@ -101,7 +108,7 @@ namespace Projecto
                 messageHandled = true;
             }
 
-            IncrementNextSequenceNumber(messageHandled);
+            IncrementNextSequenceNumber(connectionFactory, messageHandled);
         }
     }
 }

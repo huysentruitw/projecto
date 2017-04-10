@@ -1,4 +1,6 @@
-﻿namespace Projecto.Tests.TestClasses
+﻿using System;
+
+namespace Projecto.Tests.TestClasses
 {
     public class TestProjection : Projection<FakeConnection, FakeMessageEnvelope>
     {
@@ -13,14 +15,20 @@
             When<RegisteredMessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
         }
 
-        public virtual void MockIncrementSequenceNumber(bool messageHandledByProjection) { }
+        public virtual void MockFetchNextSequenceNumber(Func<object> connectionFactory) { }
 
-        protected override int FetchNextSequenceNumber() => _initialNextSequence ?? base.FetchNextSequenceNumber();
+        public virtual void MockIncrementSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection) { }
 
-        protected override void IncrementNextSequenceNumber(bool messageHandledByProjection)
+        protected override int FetchNextSequenceNumber(Func<object> connectionFactory)
         {
-            base.IncrementNextSequenceNumber(messageHandledByProjection);
-            MockIncrementSequenceNumber(messageHandledByProjection);
+            MockFetchNextSequenceNumber(connectionFactory);
+            return _initialNextSequence ?? base.FetchNextSequenceNumber(connectionFactory);
+        }
+
+        protected override void IncrementNextSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection)
+        {
+            base.IncrementNextSequenceNumber(connectionFactory, messageHandledByProjection);
+            MockIncrementSequenceNumber(connectionFactory, messageHandledByProjection);
         }
     }
 }
