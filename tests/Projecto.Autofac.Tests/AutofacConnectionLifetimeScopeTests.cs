@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using Autofac;
 using Autofac.Core;
 using Moq;
@@ -9,6 +10,7 @@ using Projecto.DependencyInjection;
 namespace Projecto.Autofac.Tests
 {
     [TestFixture]
+    [SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
     public class AutofacConnectionLifetimeScopeTests
     {
         [Test]

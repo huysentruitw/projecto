@@ -62,7 +62,7 @@ namespace Projecto.Autofac.Tests
             var messageEnvelope = new FakeMessageEnvelope(sequence, new FakeMessage());
 
             var projectionMock = new Mock<IProjection<FakeMessageEnvelope>>();
-            projectionMock.SetupGet(x => x.NextSequenceNumber).Returns(() => sequence);
+            projectionMock.Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => sequence);
             projectionMock.SetupGet(x => x.ConnectionType).Returns(typeof(FakeConnection));
             projectionMock
                 .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
@@ -90,6 +90,7 @@ namespace Projecto.Autofac.Tests
             var container = services.Build();
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
+            // ReSharper disable once MethodSupportsCancellation
             await projector.Project(messageEnvelope);
 
             projectionMock.Verify(x => x.Handle(

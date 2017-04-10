@@ -35,10 +35,11 @@ namespace Projecto
         /// <summary>
         /// Gets the next event sequence number needed by this projection.
         /// </summary>
-        int NextSequenceNumber { get; }
+        /// <param name="connectionFactory">The connection factory.</param>
+        int GetNextSequenceNumber(Func<object> connectionFactory);
 
         /// <summary>
-        /// Passes a message to a matching handler and increments <see cref="NextSequenceNumber"/>.
+        /// Passes a message to a matching handler and increments the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageEnvelope">The message envelope.</param>

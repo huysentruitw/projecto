@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Projecto.Tests.TestClasses
+﻿namespace Projecto.Tests.TestClasses
 {
     public class FakeMessageEnvelope : MessageEnvelope
     {
@@ -8,9 +6,5 @@ namespace Projecto.Tests.TestClasses
             : base(sequenceNumber, message)
         {
         }
-
-        public string OriginatingCommandId { get; } = Guid.NewGuid().ToString("N");
-
-        public DateTime DateCreated { get; } = DateTime.UtcNow;
     }
 }

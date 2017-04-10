@@ -1,5 +1,10 @@
-﻿namespace Projecto.Tests.TestClasses
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+
+namespace Projecto.Tests.TestClasses
 {
+    [SuppressMessage("ReSharper", "UnusedParameter.Global")]
+    [SuppressMessage("ReSharper", "ClassWithVirtualMembersNeverInherited.Global")]
     public class TestProjection : Projection<FakeConnection, FakeMessageEnvelope>
     {
         private readonly int? _initialNextSequence;
@@ -8,11 +13,25 @@
         {
             _initialNextSequence = initialNextSequence;
 
-            When<MessageA>((conn, ctx, msg) => conn.UpdateA(ctx, msg));
+            When<RegisteredMessageA>((conn, ctx, msg) => conn.UpdateA(ctx, msg));
 
-            When<MessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
+            When<RegisteredMessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
         }
 
-        protected override int FetchNextSequenceNumber() => _initialNextSequence ?? base.FetchNextSequenceNumber();
+        public virtual void MockFetchNextSequenceNumber(Func<object> connectionFactory) { }
+
+        public virtual void MockIncrementSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection) { }
+
+        protected override int FetchNextSequenceNumber(Func<object> connectionFactory)
+        {
+            MockFetchNextSequenceNumber(connectionFactory);
+            return _initialNextSequence ?? base.FetchNextSequenceNumber(connectionFactory);
+        }
+
+        protected override void IncrementNextSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection)
+        {
+            base.IncrementNextSequenceNumber(connectionFactory, messageHandledByProjection);
+            MockIncrementSequenceNumber(connectionFactory, messageHandledByProjection);
+        }
     }
 }

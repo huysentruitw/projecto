@@ -16,10 +16,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Projecto.DependencyInjection;
+using Projecto.Extensions;
 
 namespace Projecto
 {
@@ -61,7 +63,19 @@ namespace Projecto
         /// <summary>
         /// Gets the next event sequence number needed by the most out-dated registered projection.
         /// </summary>
-        public int NextSequenceNumber => _nextSequenceNumber ?? (int)(_nextSequenceNumber = _projections.Select(x => x.NextSequenceNumber).Min());
+        public int GetNextSequenceNumber()
+        {
+            if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
+
+            using (var scope = _connectionLifetimeScopeFactory.BeginLifetimeScope())
+            {
+                _nextSequenceNumber = _projections
+                    .Select(projection => projection.GetNextSequenceNumber(scope.GetConnectionFactoryFor(projection)))
+                    .Min();
+
+                return _nextSequenceNumber.Value;
+            }
+        }
 
         /// <summary>
         /// Project a message to all registered projections.
@@ -83,6 +97,7 @@ namespace Projecto
         /// </summary>
         /// <param name="messageEnvelopes">The message envelopes.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
+        [SuppressMessage("ReSharper", "UnusedMember.Global")]
         public Task Project(TMessageEnvelope[] messageEnvelopes) => Project(messageEnvelopes, CancellationToken.None);
 
         /// <summary>
@@ -91,21 +106,27 @@ namespace Projecto
         /// <param name="messageEnvelopes">The message envelopes.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
+        [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
         public async Task Project(TMessageEnvelope[] messageEnvelopes, CancellationToken cancellationToken)
         {
+            if (!_nextSequenceNumber.HasValue) GetNextSequenceNumber();
+
             using (var scope = _connectionLifetimeScopeFactory.BeginLifetimeScope())
             {
                 foreach (var messageEnvelope in messageEnvelopes)
                 {
-                    if (messageEnvelope.SequenceNumber != NextSequenceNumber)
+                    if (messageEnvelope.SequenceNumber != _nextSequenceNumber)
                         throw new ArgumentOutOfRangeException(nameof(messageEnvelope.SequenceNumber), 
-                            $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {NextSequenceNumber}");
+                            $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {_nextSequenceNumber}");
 
-                    foreach (var projection in _projections.Where(x => x.NextSequenceNumber == messageEnvelope.SequenceNumber))
+                    foreach (var projection in _projections)
                     {
-                        await projection.Handle(() => scope.ResolveConnection(projection.ConnectionType), messageEnvelope, cancellationToken).ConfigureAwait(false);
+                        var connectionFactory = scope.GetConnectionFactoryFor(projection);
+                        if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber) continue;
+
+                        await projection.Handle(connectionFactory, messageEnvelope, cancellationToken).ConfigureAwait(false);
                         if (cancellationToken.IsCancellationRequested) return;
-                        if (projection.NextSequenceNumber != messageEnvelope.SequenceNumber + 1)
+                        if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber + 1)
                             throw new InvalidOperationException(
                                 $"Projection {projection.GetType()} did not increment NextSequence ({messageEnvelope.SequenceNumber}) after processing message {messageEnvelope.Message.GetType()}");
                     }

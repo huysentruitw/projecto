@@ -16,6 +16,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using Projecto.DependencyInjection;
 
 namespace Projecto
@@ -60,6 +61,7 @@ namespace Projecto
         /// </summary>
         /// <param name="factory">The connection lifetime scope factory.</param>
         /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
         public ProjectorBuilder<TMessageEnvelope> SetConnectionLifetimeScopeFactory(IConnectionLifetimeScopeFactory factory)
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
