@@ -18,17 +18,17 @@ namespace Projecto.Tests.TestClasses
             When<RegisteredMessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
         }
 
-        public virtual void MockFetchNextSequenceNumber(Func<object> connectionFactory) { }
+        public virtual void MockFetchNextSequenceNumber(Func<FakeConnection> connectionFactory) { }
 
-        public virtual void MockIncrementSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection) { }
+        public virtual void MockIncrementSequenceNumber(Func<FakeConnection> connectionFactory, bool messageHandledByProjection) { }
 
-        protected override int FetchNextSequenceNumber(Func<object> connectionFactory)
+        protected override int FetchNextSequenceNumber(Func<FakeConnection> connectionFactory)
         {
             MockFetchNextSequenceNumber(connectionFactory);
             return _initialNextSequence ?? base.FetchNextSequenceNumber(connectionFactory);
         }
 
-        protected override void IncrementNextSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection)
+        protected override void IncrementNextSequenceNumber(Func<FakeConnection> connectionFactory, bool messageHandledByProjection)
         {
             base.IncrementNextSequenceNumber(connectionFactory, messageHandledByProjection);
             MockIncrementSequenceNumber(connectionFactory, messageHandledByProjection);

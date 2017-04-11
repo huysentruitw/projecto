@@ -10,19 +10,21 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectionTests
     {
-        private readonly Func<object> _connectionFactory = () => new FakeConnection();
+        private readonly Func<FakeConnection> _connectionFactory = () => new FakeConnection();
 
         [Test]
         public void GetNextSequenceNumber_ValueAfterConstruction_ShouldStartAtFetchedValue()
         {
-            Assert.That(new TestProjection(3).GetNextSequenceNumber(_connectionFactory), Is.EqualTo(3));
-            Assert.That(new TestProjection().GetNextSequenceNumber(_connectionFactory), Is.EqualTo(1));
+            IProjection<FakeMessageEnvelope> projection = new TestProjection(3);
+            Assert.That(projection.GetNextSequenceNumber(_connectionFactory), Is.EqualTo(3));
+            projection = new TestProjection();
+            Assert.That(projection.GetNextSequenceNumber(_connectionFactory), Is.EqualTo(1));
         }
 
         [Test]
         public void GetNextSequenceNumber_GetValueTwice_ShouldNotIncrement()
         {
-            var projection = new TestProjection();
+            IProjection<FakeMessageEnvelope> projection = new TestProjection();
             Assert.That(projection.GetNextSequenceNumber(_connectionFactory), Is.EqualTo(1));
             Assert.That(projection.GetNextSequenceNumber(_connectionFactory), Is.EqualTo(1));
         }
@@ -31,12 +33,12 @@ namespace Projecto.Tests
         public void GetNextSequenceNumber_GetValueTwice_ShouldOnlyCallFetchNextSequenceNumberOnce()
         {
             var projectionMock = new Mock<TestProjection>(null) {CallBase = true};
-            projectionMock.Setup(x => x.MockFetchNextSequenceNumber(It.IsAny<Func<object>>()));
-            var projection = projectionMock.Object;
+            projectionMock.Setup(x => x.MockFetchNextSequenceNumber(It.IsAny<Func<FakeConnection>>()));
+            IProjection<FakeMessageEnvelope> projection = projectionMock.Object;
             Assert.That(projection.GetNextSequenceNumber(_connectionFactory), Is.EqualTo(1));
             Assert.That(projection.GetNextSequenceNumber(_connectionFactory), Is.EqualTo(1));
 
-            projectionMock.Verify(x => x.MockFetchNextSequenceNumber(It.IsAny<Func<object>>()), Times.Once);
+            projectionMock.Verify(x => x.MockFetchNextSequenceNumber(It.IsAny<Func<FakeConnection>>()), Times.Once);
         }
 
         [Test]
@@ -73,28 +75,28 @@ namespace Projecto.Tests
         public void Handle_MessageWithRegisteredHandler_ShouldCallIncrementNextSequenceNumberMethodWithMessageHandledByProjectionSetToTrue()
         {
             var projectionMock = new Mock<TestProjection>(null) { CallBase = true };
-            projectionMock.Setup(x => x.MockIncrementSequenceNumber(It.IsAny<Func<object>>(), It.IsAny<bool>()));
+            projectionMock.Setup(x => x.MockIncrementSequenceNumber(It.IsAny<Func<FakeConnection>>(), It.IsAny<bool>()));
             var registeredMessageEnvelope = new FakeMessageEnvelope(1, new RegisteredMessageA());
 
             IProjection<FakeMessageEnvelope> projection = projectionMock.Object;
             projection.Handle(_connectionFactory, registeredMessageEnvelope, CancellationToken.None);
 
-            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<object>>(), true), Times.Once);
-            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<object>>(), false), Times.Never);
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<FakeConnection>>(), true), Times.Once);
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<FakeConnection>>(), false), Times.Never);
         }
 
         [Test]
         public void Handle_MessageWithoutRegisteredHandler_ShouldCallIncrementNextSequenceNumberMethodWithMessageHandledByProjectionSetToFalse()
         {
             var projectionMock = new Mock<TestProjection>(null) { CallBase = true };
-            projectionMock.Setup(x => x.MockIncrementSequenceNumber(It.IsAny<Func<object>>(), It.IsAny<bool>()));
+            projectionMock.Setup(x => x.MockIncrementSequenceNumber(It.IsAny<Func<FakeConnection>>(), It.IsAny<bool>()));
             var unregisteredMessageEnvelope = new FakeMessageEnvelope(1, new UnregisteredMessage());
 
             IProjection<FakeMessageEnvelope> projection = projectionMock.Object;
             projection.Handle(_connectionFactory, unregisteredMessageEnvelope, CancellationToken.None);
 
-            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<object>>(), true), Times.Never);
-            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<object>>(), false), Times.Once);
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<FakeConnection>>(), true), Times.Never);
+            projectionMock.Verify(x => x.MockIncrementSequenceNumber(It.IsAny<Func<FakeConnection>>(), false), Times.Once);
         }
     }
 }

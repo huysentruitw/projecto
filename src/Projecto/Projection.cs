@@ -27,6 +27,7 @@ namespace Projecto
     /// <typeparam name="TConnection">The type of the connection (f.e. DbContext or ElasticClient).</typeparam>
     /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
     public abstract class Projection<TConnection, TMessageEnvelope> : IProjection<TMessageEnvelope>
+        where TConnection : class
         where TMessageEnvelope : MessageEnvelope
     {
         /// <summary>
@@ -47,32 +48,22 @@ namespace Projecto
         public Type ConnectionType => typeof(TConnection);
 
         /// <summary>
-        /// Gets the next event sequence number needed by this projection.
-        /// </summary>
-        /// <param name="connectionFactory">The connection factory.</param>
-        public int GetNextSequenceNumber(Func<object> connectionFactory)
-        {
-            if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
-            return (int) (_nextSequenceNumber = FetchNextSequenceNumber(connectionFactory));
-        }
-
-        /// <summary>
-        /// Fetch the initial next sequence number, returned by <see cref="GetNextSequenceNumber"/>, needed by this projection.
+        /// Fetch the initial next sequence number, returned by <see cref="IProjection{TMessageEnvelope}.GetNextSequenceNumber"/>, needed by this projection.
         /// This method is only called once during startup, so make sure this projection is only registered with one <see cref="Projector{TMessageEnvelope}"/>.
         /// Override this method to fetch the sequence number from persistent storage.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>
         /// <returns>The next sequence number. Defaults to 1.</returns>
-        protected virtual int FetchNextSequenceNumber(Func<object> connectionFactory) => 1;
+        protected virtual int FetchNextSequenceNumber(Func<TConnection> connectionFactory) => 1;
 
         /// <summary>
-        /// Increment the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
+        /// Increment the next sequence number returned by <see cref="IProjection{TMessageEnvelope}.GetNextSequenceNumber"/>.
         /// Override this method if you want to persist the new sequence number.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageHandledByProjection">True when the message causing the increment was actually handled by the projection. False when the message causing the increment was not handled by the projection.</param>
-        protected virtual void IncrementNextSequenceNumber(Func<object> connectionFactory, bool messageHandledByProjection)
-            => _nextSequenceNumber = GetNextSequenceNumber(connectionFactory) + 1;
+        protected virtual void IncrementNextSequenceNumber(Func<TConnection> connectionFactory, bool messageHandledByProjection)
+            => _nextSequenceNumber = ((IProjection<TMessageEnvelope>)this).GetNextSequenceNumber(connectionFactory) + 1;
 
         /// <summary>
         /// Registers a message handler for a given message type.
@@ -91,7 +82,17 @@ namespace Projecto
             => _handlers.Add(typeof(TMessage), (connection, messageEnvelope, cancellationToken) => handler(connection, messageEnvelope, (TMessage)messageEnvelope.Message, cancellationToken));
 
         /// <summary>
-        /// Passes a message to a matching handler and increments the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
+        /// Gets the next event sequence number needed by this projection.
+        /// </summary>
+        /// <param name="connectionFactory">The connection factory.</param>
+        int IProjection<TMessageEnvelope>.GetNextSequenceNumber(Func<object> connectionFactory)
+        {
+            if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
+            return (int)(_nextSequenceNumber = FetchNextSequenceNumber(() => (TConnection)connectionFactory()));
+        }
+
+        /// <summary>
+        /// Passes a message to a matching handler and increments the next sequence number returned by <see cref="IProjection{TMessageEnvelope}.GetNextSequenceNumber"/>.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
@@ -103,12 +104,12 @@ namespace Projecto
             bool messageHandled = false;
             if (_handlers.TryGetValue(messageEnvelope.Message.GetType(), out handler))
             {
-                var connection = (TConnection)connectionFactory();
+                var connection = (TConnection) connectionFactory();
                 await handler(connection, messageEnvelope, cancellationToken).ConfigureAwait(false);
                 messageHandled = true;
             }
 
-            IncrementNextSequenceNumber(connectionFactory, messageHandled);
+            IncrementNextSequenceNumber(() => (TConnection) connectionFactory(), messageHandled);
         }
     }
 }
