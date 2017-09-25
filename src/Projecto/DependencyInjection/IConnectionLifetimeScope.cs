@@ -34,9 +34,9 @@ namespace Projecto.DependencyInjection
         /// <summary>
         /// Called when a certain connection needs to be resolved.
         /// </summary>
-        /// <typeparam name="TConnection">The type of the connection.</typeparam>
+        /// <param name="connectionType">The type of the connection.</param>
         /// <returns>An instance of the requested connection type or null when the type was not found.</returns>
-        TConnection ResolveConnection<TConnection>();
+        object ResolveConnection(Type connectionType);
 
         /// <summary>
         /// Event triggered when a connection was resolved from the lifetime scope.

@@ -21,6 +21,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Projecto.DependencyInjection;
+using Projecto.Extensions;
 
 namespace Projecto
 {
@@ -62,22 +63,18 @@ namespace Projecto
         /// <summary>
         /// Gets the next event sequence number needed by the most out-dated registered projection.
         /// </summary>
-        public int GetNextSequenceNumber() => GetNextSequenceNumber(null);
-
-        private int GetNextSequenceNumber(IConnectionLifetimeScope scope)
+        public int GetNextSequenceNumber()
         {
             if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
 
-            var owned = scope == null;
-            scope = scope ?? _connectionLifetimeScopeFactory.BeginLifetimeScope();
+            using (var scope = _connectionLifetimeScopeFactory.BeginLifetimeScope())
+            {
+                _nextSequenceNumber = _projections
+                    .Select(projection => projection.GetNextSequenceNumber(scope.GetConnectionFactoryFor(projection)))
+                    .Min();
 
-            _nextSequenceNumber = _projections
-                .Select(projection => projection.GetNextSequenceNumber(scope))
-                .Min();
-
-            if (owned) scope.Dispose();
-
-            return _nextSequenceNumber.Value;
+                return _nextSequenceNumber.Value;
+            }
         }
 
         /// <summary>
@@ -112,10 +109,10 @@ namespace Projecto
         [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
         public async Task Project(TMessageEnvelope[] messageEnvelopes, CancellationToken cancellationToken)
         {
+            if (!_nextSequenceNumber.HasValue) GetNextSequenceNumber();
+
             using (var scope = _connectionLifetimeScopeFactory.BeginLifetimeScope())
             {
-                if (!_nextSequenceNumber.HasValue) GetNextSequenceNumber(scope);
-
                 foreach (var messageEnvelope in messageEnvelopes)
                 {
                     if (messageEnvelope.SequenceNumber != _nextSequenceNumber)
@@ -124,11 +121,12 @@ namespace Projecto
 
                     foreach (var projection in _projections)
                     {
-                        if (projection.GetNextSequenceNumber(scope) != messageEnvelope.SequenceNumber) continue;
+                        var connectionFactory = scope.GetConnectionFactoryFor(projection);
+                        if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber) continue;
 
-                        await projection.Handle(scope, messageEnvelope, cancellationToken).ConfigureAwait(false);
+                        await projection.Handle(connectionFactory, messageEnvelope, cancellationToken).ConfigureAwait(false);
                         if (cancellationToken.IsCancellationRequested) return;
-                        if (projection.GetNextSequenceNumber(scope) != messageEnvelope.SequenceNumber + 1)
+                        if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber + 1)
                             throw new InvalidOperationException(
                                 $"Projection {projection.GetType()} did not increment NextSequence ({messageEnvelope.SequenceNumber}) after processing message {messageEnvelope.Message.GetType()}");
                     }

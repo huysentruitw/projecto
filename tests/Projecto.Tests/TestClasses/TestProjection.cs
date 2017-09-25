@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Projecto.Tests.TestClasses
 {
@@ -17,20 +18,20 @@ namespace Projecto.Tests.TestClasses
             When<RegisteredMessageB>((conn, ctx, msg, cancellationToken) => conn.UpdateB(ctx, msg, cancellationToken));
         }
 
-        public virtual void MockFetchNextSequenceNumber(FakeConnection connection) { }
+        public virtual void MockFetchNextSequenceNumber(Func<FakeConnection> connectionFactory) { }
 
-        public virtual void MockIncrementSequenceNumber(FakeConnection connection, bool messageHandledByProjection) { }
+        public virtual void MockIncrementSequenceNumber(Func<FakeConnection> connectionFactory, bool messageHandledByProjection) { }
 
-        protected override int FetchNextSequenceNumber(FakeConnection connection)
+        protected override int FetchNextSequenceNumber(Func<FakeConnection> connectionFactory)
         {
-            MockFetchNextSequenceNumber(connection);
-            return _initialNextSequence ?? base.FetchNextSequenceNumber(connection);
+            MockFetchNextSequenceNumber(connectionFactory);
+            return _initialNextSequence ?? base.FetchNextSequenceNumber(connectionFactory);
         }
 
-        protected override void IncrementNextSequenceNumber(FakeConnection connection, bool messageHandledByProjection)
+        protected override void IncrementNextSequenceNumber(Func<FakeConnection> connectionFactory, bool messageHandledByProjection)
         {
-            base.IncrementNextSequenceNumber(connection, messageHandledByProjection);
-            MockIncrementSequenceNumber(connection, messageHandledByProjection);
+            base.IncrementNextSequenceNumber(connectionFactory, messageHandledByProjection);
+            MockIncrementSequenceNumber(connectionFactory, messageHandledByProjection);
         }
     }
 }
