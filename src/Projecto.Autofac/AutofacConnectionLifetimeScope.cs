@@ -58,12 +58,12 @@ namespace Projecto.Autofac
         /// <summary>
         /// Resolves a connection.
         /// </summary>
-        /// <param name="connectionType">The type of the connection.</param>
+        /// <typeparam name="TConnection">The type of the connection.</typeparam>
         /// <returns>An instance of the requested connection type or null when the type was not found.</returns>
-        public object ResolveConnection(Type connectionType)
+        public TConnection ResolveConnection<TConnection>()
         {
-            var connection = _lifetimeScope.Resolve(connectionType);
-            if (connection != null) ConnectionResolved?.Invoke(new ConnectionResolvedEventArgs(this, connectionType, connection));
+            var connection = _lifetimeScope.Resolve<TConnection>();
+            if (connection != null) ConnectionResolved?.Invoke(new ConnectionResolvedEventArgs(this, typeof(TConnection), connection));
             return connection;
         }
 

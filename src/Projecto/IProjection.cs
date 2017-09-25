@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Projecto.DependencyInjection;
 
 namespace Projecto
 {
@@ -28,23 +28,18 @@ namespace Projecto
         where TMessageEnvelope : MessageEnvelope
     {
         /// <summary>
-        /// Gets the type of the connection required by this projection.
-        /// </summary>
-        Type ConnectionType { get; }
-
-        /// <summary>
         /// Gets the next event sequence number needed by this projection.
         /// </summary>
-        /// <param name="connectionFactory">The connection factory.</param>
-        int GetNextSequenceNumber(Func<object> connectionFactory);
+        /// <param name="lifetimeScope">The connection lifetime scope.</param>
+        int GetNextSequenceNumber(IConnectionLifetimeScope lifetimeScope);
 
         /// <summary>
         /// Passes a message to a matching handler and increments the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
         /// </summary>
-        /// <param name="connectionFactory">The connection factory.</param>
+        /// <param name="lifetimeScope">The connection lifetime scope.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A <see cref="Task"/> for async execution.</returns>
-        Task Handle(Func<object> connectionFactory, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
+        Task Handle(IConnectionLifetimeScope lifetimeScope, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
     }
 }
