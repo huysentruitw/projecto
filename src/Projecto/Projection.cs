@@ -103,7 +103,7 @@ namespace Projecto
         /// </summary>
         /// <param name="connectionFactory">The sequence number connection factory.</param>
         /// <returns>The next sequence number needed by this projection.</returns>
-        private int GetNextSequenceNumber(Func<TSequenceNumberConnection> connectionFactory)
+        protected int GetNextSequenceNumber(Func<TSequenceNumberConnection> connectionFactory)
         {
             if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
             return (int)(_nextSequenceNumber = FetchNextSequenceNumber(connectionFactory()));
