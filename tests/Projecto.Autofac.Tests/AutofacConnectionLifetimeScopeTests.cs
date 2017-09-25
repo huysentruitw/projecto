@@ -73,7 +73,7 @@ namespace Projecto.Autofac.Tests
             var container = builder.Build();
 
             var scope = new AutofacConnectionLifetimeScope(container);
-            var connection = scope.ResolveConnection(typeof(FakeConnection));
+            var connection = scope.ResolveConnection<FakeConnection>();
 
             Assert.That(connection, Is.Not.Null);
             Assert.That(connection.GetType(), Is.EqualTo(typeof(FakeConnection)));
@@ -95,7 +95,7 @@ namespace Projecto.Autofac.Tests
                 eventArgs = e;
             };
 
-            Assert.That(scope.ResolveConnection(typeof(FakeConnection)), Is.Not.Null);
+            Assert.That(scope.ResolveConnection<FakeConnection>(), Is.Not.Null);
 
             Assert.That(eventArgs, Is.Not.Null);
             Assert.That(eventArgs.LifetimeScope, Is.EqualTo(scope));
@@ -115,7 +115,7 @@ namespace Projecto.Autofac.Tests
             var scope = new AutofacConnectionLifetimeScope(container);
             scope.ConnectionResolved += e => eventFired = true;
 
-            Assert.Throws<DependencyResolutionException>(() => scope.ResolveConnection(typeof(FakeConnection)));
+            Assert.Throws<DependencyResolutionException>(() => scope.ResolveConnection<FakeConnection>());
 
             Assert.That(eventFired, Is.False);
         }
