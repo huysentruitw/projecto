@@ -21,14 +21,12 @@ namespace Projecto.Tests
         public ProjectorTests()
         {
             _factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
+            _factoryMock.Setup(x => x.BeginLifetimeScope()).Returns(() => new Mock<IConnectionLifetimeScope>().Object);
         }
 
         [SetUp]
         public void SetUp()
         {
-            _factoryMock.Reset();
-            _factoryMock.Setup(x => x.BeginLifetimeScope()).Returns(() => new Mock<IConnectionLifetimeScope>().Object);
-
             _projectionMocks = new []
             {
                 new Mock<IProjection<FakeMessageEnvelope>>(),
@@ -63,9 +61,9 @@ namespace Projecto.Tests
         [Test]
         public void GetNextSequenceNumber_GetAfterConstruction_ShouldReturnLowestNextSequence()
         {
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(100);
-            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(73);
-            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(102);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(100);
+            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(73);
+            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(102);
 
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
             var projector = new Projector<FakeMessageEnvelope>(projections, _factoryMock.Object);
@@ -76,9 +74,9 @@ namespace Projecto.Tests
         public void Project_MessageWithWrongSequenceNumber_ShouldThrowException()
         {
             var messageEnvelope = new FakeMessageEnvelope(2, new RegisteredMessageA());
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(5);
-            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(6);
-            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(3);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(5);
+            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(6);
+            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(3);
 
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
             var projector = new Projector<FakeMessageEnvelope>(projections, _factoryMock.Object);
@@ -90,9 +88,9 @@ namespace Projecto.Tests
         public void Project_ProjectionDoesntIncrementSequenceNumber_ShouldThrowException()
         {
             var messageEnvelope = new FakeMessageEnvelope(3, new RegisteredMessageA());
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(5);
-            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(6);
-            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(3);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(5);
+            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(6);
+            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(3);
 
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
             var projector = new Projector<FakeMessageEnvelope>(projections, _factoryMock.Object);
@@ -105,11 +103,11 @@ namespace Projecto.Tests
         {
             var nextSequence = 3;
             var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(5);
-            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(6);
-            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => nextSequence);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(5);
+            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(6);
+            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => nextSequence);
             _projectionMocks[2]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), messageEnvelope, CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, CancellationToken.None))
                 .Callback(() => nextSequence++)
                 .Returns(() => Task.FromResult(0));
 
@@ -125,19 +123,19 @@ namespace Projecto.Tests
         {
             var message = new RegisteredMessageA();
             var nextSequences = new[] { 5, 6, 5 };
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => nextSequences[0]);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => nextSequences[0]);
             _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.Is<FakeMessageEnvelope>(e => e.Message == message), CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), It.Is<FakeMessageEnvelope>(e => e.Message == message), CancellationToken.None))
                 .Callback(() => nextSequences[0]++).Returns(() => Task.FromResult(0));
 
-            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => nextSequences[1]);
+            _projectionMocks[1].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => nextSequences[1]);
             _projectionMocks[1]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.Is<FakeMessageEnvelope>(e => e.Message == message), CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), It.Is<FakeMessageEnvelope>(e => e.Message == message), CancellationToken.None))
                 .Callback(() => nextSequences[1]++).Returns(() => Task.FromResult(0));
 
-            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => nextSequences[2]);
+            _projectionMocks[2].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => nextSequences[2]);
             _projectionMocks[2]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.Is<FakeMessageEnvelope>(e => e.Message == message), CancellationToken.None))
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), It.Is<FakeMessageEnvelope>(e => e.Message == message), CancellationToken.None))
                 .Callback(() => nextSequences[2]++).Returns(() => Task.FromResult(0));
 
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
@@ -145,24 +143,24 @@ namespace Projecto.Tests
 
             await projector.Project(new FakeMessageEnvelope(5, message));
             _projectionMocks[0].Verify(
-                x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
                 Times.Once);
             _projectionMocks[1].Verify(
-                x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
                 Times.Never);
             _projectionMocks[2].Verify(
-                x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
                 Times.Once);
 
             await projector.Project(new FakeMessageEnvelope(6, message));
             _projectionMocks[0].Verify(
-                x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
                 Times.Exactly(2));
             _projectionMocks[1].Verify(
-                x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
                 Times.Once);
             _projectionMocks[2].Verify(
-                x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
+                x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), It.IsAny<CancellationToken>()),
                 Times.Exactly(2));
         }
 
@@ -172,9 +170,9 @@ namespace Projecto.Tests
             var sequenceNumber = 10;
             var messageEnvelope = new FakeMessageEnvelope(sequenceNumber, new RegisteredMessageA());
             var isCancelled = false;
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => sequenceNumber);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => sequenceNumber);
             _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), messageEnvelope, It.IsAny<CancellationToken>()))
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
                 .Returns<object, FakeMessageEnvelope, CancellationToken>((_, __, token) =>
                 {
                     // ReSharper disable once MethodSupportsCancellation
@@ -197,35 +195,39 @@ namespace Projecto.Tests
         {
             var nextSequence = 5;
             var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
+            var connectionType = typeof(ConnectionA);
 
-            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => nextSequence);
+            _projectionMocks[0].Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => nextSequence);
+            _projectionMocks[0].SetupGet(x => x.ConnectionType).Returns(connectionType);
             _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), messageEnvelope, CancellationToken.None))
-                .Callback<IConnectionLifetimeScope, FakeMessageEnvelope, CancellationToken>((scope, _, __) =>
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, CancellationToken.None))
+                .Callback<Func<object>, FakeMessageEnvelope, CancellationToken>((connectionResolver, _, __) =>
                 {
-                    Assert.That(scope.ResolveConnection<ConnectionA>(), Is.Not.Null);
+                    Assert.That(connectionResolver(), Is.Not.Null);
                     nextSequence++;
                 })
                 .Returns(() => Task.FromResult(0));
 
             var executionOrder = 0;
 
+            var factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
+
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Take(1).Select(x => x.Object));
-            var projector = new Projector<FakeMessageEnvelope>(projections, _factoryMock.Object);
+            var projector = new Projector<FakeMessageEnvelope>(projections, factoryMock.Object);
 
             // Get the sequence number first so this scope creation/disposal does not influence our test
             projector.GetNextSequenceNumber();
 
-            _factoryMock
+            factoryMock
                 .Setup(x => x.BeginLifetimeScope())
                 .Callback(() => Assert.That(executionOrder++, Is.EqualTo(0)))
                 .Returns(() =>
                 {
                     var scopeMock = new Mock<IConnectionLifetimeScope>();
                     scopeMock
-                        .Setup(x => x.ResolveConnection<ConnectionA>())
+                        .Setup(x => x.ResolveConnection(connectionType))
                         .Callback(() => Assert.That(executionOrder++, Is.EqualTo(1)))
-                        .Returns(() => new ConnectionA());
+                        .Returns(() => new FakeConnection());
 
                     scopeMock
                         .Setup(x => x.Dispose())
@@ -240,84 +242,39 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public async Task Project_WithProjectionThatNeedsSeparateHandleAndSequenceNumberConnection_ShouldResolveBothConnectionInCorrectOrder()
-        {
-            var nextSequence = 7;
-            var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageB());
-
-            _projectionMocks[0]
-                .Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>()))
-                .Callback<IConnectionLifetimeScope>(scope => scope.ResolveConnection<ConnectionA>())
-                .Returns(() => nextSequence);
-            _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), messageEnvelope, CancellationToken.None))
-                .Callback<IConnectionLifetimeScope, FakeMessageEnvelope, CancellationToken>((connectionResolver, _, __) =>
-                {
-                    Assert.That(connectionResolver.ResolveConnection<ConnectionB>(), Is.Not.Null);
-                    nextSequence++;
-                })
-                .Returns(() => Task.FromResult(0));
-
-            var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Take(1).Select(x => x.Object));
-            var projector = new Projector<FakeMessageEnvelope>(projections, _factoryMock.Object);
-
-            var executionOrder = 0;
-
-            _factoryMock
-                .Setup(x => x.BeginLifetimeScope())
-                .Callback(() => Assert.That(executionOrder++, Is.EqualTo(0)))
-                .Returns(() =>
-                {
-                    var scopeMock = new Mock<IConnectionLifetimeScope>();
-                    scopeMock
-                        .Setup(x => x.ResolveConnection<ConnectionA>())
-                        .Callback(() => Assert.That(executionOrder++, Is.EqualTo(1).Or.EqualTo(2).Or.EqualTo(4)))
-                        .Returns(() => new ConnectionA());
-
-                    scopeMock
-                        .Setup(x => x.ResolveConnection<ConnectionB>())
-                        .Callback(() => Assert.That(executionOrder++, Is.EqualTo(3)))
-                        .Returns(() => new ConnectionB());
-                    return scopeMock.Object;
-                });
-
-            // ReSharper disable once MethodSupportsCancellation
-            await projector.Project(messageEnvelope);
-
-            Assert.That(executionOrder, Is.EqualTo(5));
-        }
-
-        [Test]
         public void GetNextSequenceNumber_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeConnectionLifetimeScopeInCorrectOrder()
         {
             var nextSequence = 5;
             var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
+            var connectionType = typeof(ConnectionA);
 
             _projectionMocks[0]
-                .Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>()))
-                .Callback<IConnectionLifetimeScope>(scope => scope.ResolveConnection<ConnectionA>())
+                .Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>()))
+                .Callback<Func<object>>(connectionFactory => connectionFactory())
                 .Returns(() => nextSequence);
+            _projectionMocks[0].SetupGet(x => x.ConnectionType).Returns(connectionType);
             _projectionMocks[0]
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), messageEnvelope, CancellationToken.None))
-                .Callback<IConnectionLifetimeScope, FakeMessageEnvelope, CancellationToken>((connectionResolver, _, __) =>
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, CancellationToken.None))
+                .Callback<Func<object>, FakeMessageEnvelope, CancellationToken>((connectionResolver, _, __) =>
                 {
-                    Assert.That(connectionResolver.ResolveConnection<ConnectionA>(), Is.Not.Null);
+                    Assert.That(connectionResolver(), Is.Not.Null);
                     nextSequence++;
                 })
                 .Returns(() => Task.FromResult(0));
 
             var executionOrder = 0;
 
-            _factoryMock
+            var factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
+            factoryMock
                 .Setup(x => x.BeginLifetimeScope())
                 .Callback(() => Assert.That(executionOrder++, Is.EqualTo(0)))
                 .Returns(() =>
                 {
                     var scopeMock = new Mock<IConnectionLifetimeScope>();
                     scopeMock
-                        .Setup(x => x.ResolveConnection<ConnectionA>())
+                        .Setup(x => x.ResolveConnection(connectionType))
                         .Callback(() => Assert.That(executionOrder++, Is.EqualTo(1)))
-                        .Returns(() => new ConnectionA());
+                        .Returns(() => new FakeConnection());
 
                     scopeMock
                         .Setup(x => x.Dispose())
@@ -326,7 +283,7 @@ namespace Projecto.Tests
                 });
 
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Take(1).Select(x => x.Object));
-            var projector = new Projector<FakeMessageEnvelope>(projections, _factoryMock.Object);
+            var projector = new Projector<FakeMessageEnvelope>(projections, factoryMock.Object);
 
             projector.GetNextSequenceNumber();
 

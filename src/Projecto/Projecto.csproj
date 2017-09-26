@@ -48,6 +48,7 @@
     <Compile Include="DependencyInjection\ConnectionLifetimeScopeEndingEvent.cs" />
     <Compile Include="DependencyInjection\IConnectionLifetimeScope.cs" />
     <Compile Include="DependencyInjection\IConnectionLifetimeScopeFactory.cs" />
+    <Compile Include="Extensions\ConnectionLifetimeScopeExtensions.cs" />
     <Compile Include="MessageEnvelope.cs" />
     <Compile Include="IProjection.cs" />
     <Compile Include="Projection.cs" />

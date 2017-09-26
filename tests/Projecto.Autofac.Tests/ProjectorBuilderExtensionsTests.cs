@@ -6,7 +6,6 @@ using Autofac;
 using Moq;
 using NUnit.Framework;
 using Projecto.Autofac.Tests.TestClasses;
-using Projecto.DependencyInjection;
 
 namespace Projecto.Autofac.Tests
 {
@@ -63,13 +62,14 @@ namespace Projecto.Autofac.Tests
             var messageEnvelope = new FakeMessageEnvelope(sequence, new FakeMessage());
 
             var projectionMock = new Mock<IProjection<FakeMessageEnvelope>>();
-            projectionMock.Setup(x => x.GetNextSequenceNumber(It.IsAny<IConnectionLifetimeScope>())).Returns(() => sequence);
+            projectionMock.Setup(x => x.GetNextSequenceNumber(It.IsAny<Func<object>>())).Returns(() => sequence);
+            projectionMock.SetupGet(x => x.ConnectionType).Returns(typeof(FakeConnection));
             projectionMock
-                .Setup(x => x.Handle(It.IsAny<IConnectionLifetimeScope>(), messageEnvelope, It.IsAny<CancellationToken>()))
-                .Callback<IConnectionLifetimeScope, FakeMessageEnvelope, CancellationToken>(
-                    (scope, _, __) =>
+                .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
+                .Callback<Func<object>, FakeMessageEnvelope, CancellationToken>(
+                    (resolver, _, __) =>
                     {
-                        var connection = scope.ResolveConnection<FakeConnection>();
+                        var connection = resolver();
                         Assert.That(connection, Is.Not.Null);
                         Assert.That(connection.GetType(), Is.EqualTo(typeof(FakeConnection)));
                         sequence++;
@@ -94,7 +94,7 @@ namespace Projecto.Autofac.Tests
             await projector.Project(messageEnvelope);
 
             projectionMock.Verify(x => x.Handle(
-                It.IsAny<IConnectionLifetimeScope>(),
+                It.IsAny<Func<object>>(),
                 It.IsAny<FakeMessageEnvelope>(),
                 It.IsAny<CancellationToken>()), Times.Once);
         }

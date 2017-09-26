@@ -49,7 +49,7 @@ namespace Projecto.Autofac.Tests
             var scope = factory.BeginLifetimeScope();
 
             Assert.That(eventArgs, Is.Null);
-            scope.ResolveConnection<FakeConnection>();
+            scope.ResolveConnection(typeof(FakeConnection));
 
             Assert.That(eventArgs, Is.Not.Null);
             Assert.That(eventArgs.LifetimeScope, Is.EqualTo(scope));
