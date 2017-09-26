@@ -22,21 +22,23 @@ using Projecto.DependencyInjection;
 namespace Projecto
 {
     /// <summary>
-    /// Builder for constructing a <see cref="Projector{TMessageEnvelope}"/> instance.
+    /// Builder for constructing a <see cref="Projector{TProjectionKey, TMessageEnvelope, TNextSequenceNumberRepository}"/> instance.
     /// </summary>
+    /// <typeparam name="TProjectionKey">The type of the key that uniquely identifies a projection.</typeparam>
     /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
-    public class ProjectorBuilder<TMessageEnvelope>
+    public class ProjectorBuilder<TProjectionKey, TMessageEnvelope>
+        where TProjectionKey : IEquatable<TProjectionKey>
         where TMessageEnvelope : MessageEnvelope
     {
-        private readonly HashSet<IProjection<TMessageEnvelope>> _projections = new HashSet<IProjection<TMessageEnvelope>>();
+        private readonly HashSet<IProjection<TProjectionKey, TMessageEnvelope>> _projections = new HashSet<IProjection<TProjectionKey, TMessageEnvelope>>();
         private IDependencyLifetimeScopeFactory _dependencyLifetimeScopeFactory;
 
         /// <summary>
         /// Registers a projection.
         /// </summary>
         /// <param name="projection">The projection to register.</param>
-        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
-        public ProjectorBuilder<TMessageEnvelope> Register(IProjection<TMessageEnvelope> projection)
+        /// <returns><see cref="ProjectorBuilder{TProjectionKey, TMessageEnvelope}"/> for method chaining.</returns>
+        public ProjectorBuilder<TProjectionKey, TMessageEnvelope> Register(IProjection<TProjectionKey, TMessageEnvelope> projection)
         {
             if (projection == null) throw new ArgumentNullException(nameof(projection));
             if (_projections.Contains(projection)) throw new ArgumentException("Projection already registered", nameof(projection));
@@ -48,8 +50,8 @@ namespace Projecto
         /// Registers multiple projections.
         /// </summary>
         /// <param name="projections">The projections.</param>
-        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
-        public ProjectorBuilder<TMessageEnvelope> Register(IEnumerable<IProjection<TMessageEnvelope>> projections)
+        /// <returns><see cref="ProjectorBuilder{TProjectionKey, TMessageEnvelope}"/> for method chaining.</returns>
+        public ProjectorBuilder<TProjectionKey, TMessageEnvelope> Register(IEnumerable<IProjection<TProjectionKey, TMessageEnvelope>> projections)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             foreach (var projection in projections) Register(projection);
@@ -58,11 +60,12 @@ namespace Projecto
 
         /// <summary>
         /// Sets the dependency lifetime scope factory.
+        /// This factory is used for creating <see cref="IDependencyLifetimeScope"/> instances from where connections and the <see cref="INextSequenceNumberRepository{TProjectionKey}"/> are resolved during message projection.
         /// </summary>
         /// <param name="factory">The dependency lifetime scope factory.</param>
-        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
+        /// <returns><see cref="ProjectorBuilder{TProjectionKey, TMessageEnvelope}"/> for method chaining.</returns>
         [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
-        public ProjectorBuilder<TMessageEnvelope> SetDependencyLifetimeScopeFactory(IDependencyLifetimeScopeFactory factory)
+        public ProjectorBuilder<TProjectionKey, TMessageEnvelope> SetDependencyLifetimeScopeFactory(IDependencyLifetimeScopeFactory factory)
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
             _dependencyLifetimeScopeFactory = factory;
@@ -70,9 +73,12 @@ namespace Projecto
         }
 
         /// <summary>
-        /// Build a <see cref="Projector{TMessageEnvelope}"/> instance.
+        /// Build a <see cref="Projector{TProjectionKey, TMessageEnvelope, TNextSequenceNumberRepository}"/> instance.
         /// </summary>
-        /// <returns>The <see cref="Projector{TMessageEnvelope}"/> instance.</returns>
-        public Projector<TMessageEnvelope> Build() => new Projector<TMessageEnvelope>(_projections, _dependencyLifetimeScopeFactory);
+        /// <typeparam name="TNextSequenceNumberRepository">The type of the <see cref="INextSequenceNumberRepository{TProjectionKey}"/> implementation to use.</typeparam>
+        /// <returns>The <see cref="Projector{TProjectionKey, TMessageEnvelope, TNextSequenceNumberRepository}"/> instance.</returns>
+        public Projector<TProjectionKey, TMessageEnvelope, TNextSequenceNumberRepository> Build<TNextSequenceNumberRepository>()
+            where TNextSequenceNumberRepository : INextSequenceNumberRepository<TProjectionKey>
+            => new Projector<TProjectionKey, TMessageEnvelope, TNextSequenceNumberRepository>(_projections, _dependencyLifetimeScopeFactory);
     }
 }

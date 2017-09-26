@@ -23,28 +23,29 @@ namespace Projecto
     /// <summary>
     /// Interface for projections.
     /// </summary>
+    /// <typeparam name="TKey">The type of the key that uniquely identifies the projection.</typeparam>
     /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
-    public interface IProjection<in TMessageEnvelope>
+    public interface IProjection<TKey, in TMessageEnvelope>
+        where TKey : IEquatable<TKey>
         where TMessageEnvelope : MessageEnvelope
     {
+        /// <summary>
+        /// Gets the key that uniquely identifies this projection.
+        /// </summary>
+        TKey Key { get; }
+
         /// <summary>
         /// Gets the type of the connection required by this projection.
         /// </summary>
         Type ConnectionType { get; }
 
         /// <summary>
-        /// Gets the next event sequence number needed by this projection.
-        /// </summary>
-        /// <param name="connectionFactory">The connection factory.</param>
-        int GetNextSequenceNumber(Func<object> connectionFactory);
-
-        /// <summary>
-        /// Passes a message to a matching handler and increments the next sequence number returned by <see cref="GetNextSequenceNumber"/>.
+        /// Passes a message to a matching handler, if any.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>
         /// <param name="messageEnvelope">The message envelope.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>A <see cref="Task"/> for async execution.</returns>
-        Task Handle(Func<object> connectionFactory, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
+        /// <returns>True when the message was handled by the projection, false when not.</returns>
+        Task<bool> Handle(Func<object> connectionFactory, TMessageEnvelope messageEnvelope, CancellationToken cancellationToken);
     }
 }

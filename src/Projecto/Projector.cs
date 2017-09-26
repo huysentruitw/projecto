@@ -27,24 +27,30 @@ namespace Projecto
     /// <summary>
     /// Projector class for projecting messages to registered projections.
     /// </summary>
+    /// <typeparam name="TProjectionKey">The type of the key that uniquely identifies a projection.</typeparam>
     /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
-    public class Projector<TMessageEnvelope>
+    /// <typeparam name="TNextSequenceNumberRepository">The type of the <see cref="INextSequenceNumberRepository{TProjectionKey}"/> implementation to use.</typeparam>
+    public class Projector<TProjectionKey, TMessageEnvelope, TNextSequenceNumberRepository>
+        where TProjectionKey : IEquatable<TProjectionKey>
         where TMessageEnvelope : MessageEnvelope
+        where TNextSequenceNumberRepository : INextSequenceNumberRepository<TProjectionKey>
     {
-        private readonly HashSet<IProjection<TMessageEnvelope>> _projections;
+        private readonly HashSet<IProjection<TProjectionKey, TMessageEnvelope>> _projections;
         private readonly IDependencyLifetimeScopeFactory _dependencyLifetimeScopeFactory;
-        private int? _nextSequenceNumber;
+        private Dictionary<TProjectionKey, int> _nextSequenceNumberCache = null;
+        private readonly object _syncRoot = new object();
 
         /// <summary>
-        /// Internal constructor, used by <see cref="ProjectorBuilder{TMessageEnvelope}"/>.
+        /// Internal constructor, used by <see cref="ProjectorBuilder{TProjectionKey, TMessageEnvelope}"/>.
         /// </summary>
         /// <param name="projections">The registered projections.</param>
         /// <param name="dependencyLifetimeScopeFactory">The dependency lifetime scope factory.</param>
-        internal Projector(HashSet<IProjection<TMessageEnvelope>> projections, IDependencyLifetimeScopeFactory dependencyLifetimeScopeFactory)
+        internal Projector(HashSet<IProjection<TProjectionKey, TMessageEnvelope>> projections, IDependencyLifetimeScopeFactory dependencyLifetimeScopeFactory)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             if (!projections.Any()) throw new ArgumentException("No projections registered", nameof(projections));
             if (dependencyLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(dependencyLifetimeScopeFactory));
+            GuaranteeKeyUniqueness(projections);
             _projections = projections;
             _dependencyLifetimeScopeFactory = dependencyLifetimeScopeFactory;
         }
@@ -57,23 +63,24 @@ namespace Projecto
         /// <summary>
         /// Returns the Projections for internal usage and unit-testing.
         /// </summary>
-        internal IProjection<TMessageEnvelope>[] Projections => _projections.ToArray();
+        internal IProjection<TProjectionKey, TMessageEnvelope>[] Projections => _projections.ToArray();
 
         /// <summary>
         /// Gets the next event sequence number needed by the most out-dated registered projection.
         /// </summary>
-        public int GetNextSequenceNumber()
+        /// <returns>The next event sequence number.</returns>
+        public async Task<int> GetNextSequenceNumber()
         {
-            if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
-
-            using (var scope = _dependencyLifetimeScopeFactory.BeginLifetimeScope())
+            if (_nextSequenceNumberCache == null)
             {
-                _nextSequenceNumber = _projections
-                    .Select(projection => projection.GetNextSequenceNumber(() => scope.Resolve(projection.ConnectionType)))
-                    .Min();
-
-                return _nextSequenceNumber.Value;
+                using (var scope = _dependencyLifetimeScopeFactory.BeginLifetimeScope())
+                {
+                    var nextSequenceNumberRepository = ResolveNextSequenceNumberRepository(scope);
+                    await CacheNextSequenceNumbers(nextSequenceNumberRepository).ConfigureAwait(false);
+                }
             }
+
+            return _nextSequenceNumberCache.Values.Min();
         }
 
         /// <summary>
@@ -108,31 +115,77 @@ namespace Projecto
         [SuppressMessage("ReSharper", "MemberCanBePrivate.Global")]
         public async Task Project(TMessageEnvelope[] messageEnvelopes, CancellationToken cancellationToken)
         {
-            if (!_nextSequenceNumber.HasValue) GetNextSequenceNumber();
+            if (!messageEnvelopes.Any()) return;
 
             using (var scope = _dependencyLifetimeScopeFactory.BeginLifetimeScope())
             {
-                foreach (var messageEnvelope in messageEnvelopes)
+                var nextSequenceNumberRepository = ResolveNextSequenceNumberRepository(scope);
+                await CacheNextSequenceNumbers(nextSequenceNumberRepository).ConfigureAwait(false);
+                var nextSequenceNumber = await GetNextSequenceNumber().ConfigureAwait(false);
+
+                try
                 {
-                    if (messageEnvelope.SequenceNumber != _nextSequenceNumber)
-                        throw new ArgumentOutOfRangeException(nameof(messageEnvelope.SequenceNumber), 
-                            $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {_nextSequenceNumber}");
-
-                    foreach (var projection in _projections)
+                    foreach (var messageEnvelope in messageEnvelopes)
                     {
-                        Func<object> connectionFactory = () => scope.Resolve(projection.ConnectionType);
-                        if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber) continue;
+                        if (messageEnvelope.SequenceNumber != nextSequenceNumber)
+                            throw new ArgumentOutOfRangeException(nameof(messageEnvelope.SequenceNumber),
+                                $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {nextSequenceNumber}");
 
-                        await projection.Handle(connectionFactory, messageEnvelope, cancellationToken).ConfigureAwait(false);
-                        if (cancellationToken.IsCancellationRequested) return;
-                        if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber + 1)
-                            throw new InvalidOperationException(
-                                $"Projection {projection.GetType()} did not increment NextSequence ({messageEnvelope.SequenceNumber}) after processing message {messageEnvelope.Message.GetType()}");
+                        foreach (var projection in _projections)
+                        {
+                            if (_nextSequenceNumberCache[projection.Key] != messageEnvelope.SequenceNumber) continue;
+
+                            await projection.Handle(() => scope.Resolve(projection.ConnectionType), messageEnvelope, cancellationToken).ConfigureAwait(false);
+                            if (cancellationToken.IsCancellationRequested) return;
+                            _nextSequenceNumberCache[projection.Key] = _nextSequenceNumberCache[projection.Key] + 1;
+                        }
+
+                        nextSequenceNumber++;
                     }
-
-                    _nextSequenceNumber++;
+                }
+                finally
+                {
+                    await StoreNextSequenceNumbers(nextSequenceNumberRepository).ConfigureAwait(false);
                 }
             }
+        }
+
+        private async Task CacheNextSequenceNumbers(TNextSequenceNumberRepository nextSequenceNumberRepository)
+        {
+            if (_nextSequenceNumberCache != null) return;
+
+            var projectionKeys = new HashSet<TProjectionKey>(_projections.Select(x => x.Key));
+            var sequenceNumbers = await nextSequenceNumberRepository.Fetch(projectionKeys).ConfigureAwait(false);
+            var dictionary = projectionKeys.ToDictionary(x => x, x => sequenceNumbers.ContainsKey(x) ? sequenceNumbers[x] : 1);
+
+            lock (_syncRoot)
+            {
+                if (_nextSequenceNumberCache != null) return;
+                _nextSequenceNumberCache = dictionary;
+            }
+        }
+
+        private Task StoreNextSequenceNumbers(TNextSequenceNumberRepository nextSequenceNumberRepository)
+            => nextSequenceNumberRepository.Store(_nextSequenceNumberCache);
+
+        private TNextSequenceNumberRepository ResolveNextSequenceNumberRepository(IDependencyLifetimeScope scope)
+        {
+            var nextSequenceNumberRepository = (TNextSequenceNumberRepository)scope.Resolve(typeof(TNextSequenceNumberRepository));
+            if (nextSequenceNumberRepository == null) throw new InvalidOperationException($"Can't resolve {typeof(TNextSequenceNumberRepository).Name} from the dependency lifetime scope");
+            return nextSequenceNumberRepository;
+        }
+
+        private static void GuaranteeKeyUniqueness(ISet<IProjection<TProjectionKey, TMessageEnvelope>> projections)
+        {
+            var duplicateKeys = projections
+                .GroupBy(x => x.Key, (key, group) => new { Key = key, Count = group.Count() })
+                .Where(x => x.Count > 1)
+                .Select(x => x.Key.ToString())
+                .ToArray();
+
+            if (!duplicateKeys.Any()) return;
+
+            throw new InvalidOperationException($"One or more projections use the same key ({string.Join(", ", duplicateKeys)})");
         }
     }
 }

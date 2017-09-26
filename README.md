@@ -20,10 +20,10 @@ It's a convenient way to pass out-of-band data to the handler (f.e. the originat
 
 ### Projection
 
-Inherit from `Projection<TConnection, TMessageEnvelope>` to define a projection, where `TConnection` is the connection type used by the projection and `TMessageEnvelope` is the user-defined message envelope object (see previous topic).
+Inherit from `Projection<string, TConnection, TMessageEnvelope>` to define a projection, where `string` is the type of the unique key for identifying projections, `TConnection` is the connection type used by the projection and `TMessageEnvelope` is the user-defined message envelope object (see previous topic).
 
 ```csharp
-public class ExampleProjection : Projection<ApplicationDbContext, MyMessageEnvelope>
+public class ExampleProjection : Projection<string, ApplicationDbContext, MyMessageEnvelope>
 {
     public ExampleProjection()
     {
@@ -37,8 +37,6 @@ public class ExampleProjection : Projection<ApplicationDbContext, MyMessageEnvel
     }
 }
 ```
-
-The above projection is a simple example that does not override the `FetchNextSequenceNumber` and `IncrementNextSequenceNumber` method. If you want to persist the next event sequence number, you'll have to override those methods and fetch/store the sequence number from/to your store.
 
 ### Projector
 
@@ -59,26 +57,26 @@ var disposalCallbacks = new ExampleCollectionDisposalCallbacks();
 
 var projector = new ProjectorBuilder()
     .Register(new ExampleProjection())
-    .SetConnectionLifetimeScopeFactory(new ExampleConnectionLifetimeScopeFactory())
-    .Build();
+    .SetDependencyLifetimeScopeFactory(new ExampleDependencyLifetimeScopeFactory())
+    .Build<MyNextSequenceNumberRepository>();
 ```
 
-### ConnectionLifetimeScope
+### DependencyLifetimeScope
 
-A connection lifetime scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `ConnectionLifetimeScopeFactory` to create a disposable `ConnectionLifetimeScope`. The connection lifetime scope is responsible for resolving connections as needed by one or more projections and has `ScopeEnded` and `ConnectionResolved` events to have more control over the lifetime of the used connection(s).
+A dependency lifetime scope is a scope that is created and disposed inside the call to `projector.Project`. The projector uses the `DependencyLifetimeScopeFactory` to create a disposable `DependencyLifetimeScope`. The dependency lifetime scope is responsible for resolving the NextSequenceNumberRepository as well as connections on request by one or more projections and has `ScopeEnded` and `DependencyResolved` events to have more control over the lifetime of the used dependencies.
 
 ```csharp
-public class ExampleConnectionLifetimeScopeFactory : IConnectionLifetimeScopeFactory
+public class ExampleDependencyLifetimeScopeFactory : IDependencyLifetimeScopeFactory
 {
-    public IConnectionLifetimeScope BeginLifetimeScope()
+    public IDependencyLifetimeScope BeginLifetimeScope()
     {
-        return new ExampleConnectionLifetimeScope();
+        return new ExampleDependencyLifetimeScope();
     }
 }
 
-public class ExampleConnectionLifetimeScope : IConnectionLifetimeScope
+public class ExampleDependencyLifetimeScope : IDependencyLifetimeScope
 {
-    public ExampleProjectScope()
+    public ExampleDependencyLifetimeScope()
     {
     }
 
@@ -87,10 +85,11 @@ public class ExampleConnectionLifetimeScope : IConnectionLifetimeScope
         // Called when the project scope gets disposed
     }
 
-    public object ResolveConnection(Type connectionType)
+    public object Resolve(Type dependencyType)
     {
-        if (connectionType == typeof(ApplicationDbContext)) return new ApplicationDbContext();
-        throw new Exception($"Can't resolve unknown connection type {connectionType.Name}");
+        if (dependencyType == typeof(ApplicationDbContext)) return new ApplicationDbContext();
+        if (dependencyType == typeof(MyNextSequenceNumberRepository)) return new MyNextSequenceNumberRepository();
+        throw new Exception($"Can't resolve unknown dependency type {dependencyType.Name}");
     }
 }
 ```
@@ -108,7 +107,7 @@ autofacContainer.RegisterType<ExampleProjection>().SingleInstance();
 
 autofacContainer.Register(ctx => new ProjectorBuilder<ProjectionMessageEnvelope>()
     .RegisterProjectionsFromAutofac(ctx)
-    .UseAutofacConnectionLifetimeScopeFactory(ctx)
-    .Build()
+    .UseAutofacDependencyLifetimeScopeFactory(ctx)
+    .Build<MyNextSequenceNumberRepository>()
 ).AsSelf().SingleInstance();
 ```

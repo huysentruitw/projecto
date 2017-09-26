@@ -63,6 +63,7 @@
     <Compile Include="TestClasses\FakeConnection.cs" />
     <Compile Include="TestClasses\FakeMessage.cs" />
     <Compile Include="TestClasses\FakeMessageEnvelope.cs" />
+    <Compile Include="TestClasses\FakeNextSequenceNumberRepository.cs" />
     <Compile Include="TestClasses\FakeProjections.cs" />
   </ItemGroup>
   <ItemGroup>

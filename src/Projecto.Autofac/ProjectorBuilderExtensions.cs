@@ -21,22 +21,24 @@ using Autofac;
 namespace Projecto.Autofac
 {
     /// <summary>
-    /// <see cref="ProjectorBuilder{TMessageEnvelope}"/> extension methods.
+    /// <see cref="ProjectorBuilder{TProjectionkey, TMessageEnvelope}"/> extension methods.
     /// </summary>
     public static class ProjectorBuilderExtensions
     {
         /// <summary>
-        /// Registers all projections that are registered as <see cref="IProjection{TMessageEnvelope}"/> on the Autofac container.
+        /// Registers all projections that are registered as <see cref="IProjection{TProjectionKey, TMessageEnvelope}"/> on the Autofac container.
         /// </summary>
+        /// <typeparam name="TProjectionKey">The type of the key that uniquely identifies a projection.</typeparam>
         /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
         /// <param name="builder">The builder.</param>
         /// <param name="componentContext">The Autofac component context.</param>
-        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
-        public static ProjectorBuilder<TMessageEnvelope>
-            RegisterProjectionsFromAutofac<TMessageEnvelope>(this ProjectorBuilder<TMessageEnvelope> builder, IComponentContext componentContext)
+        /// <returns><see cref="ProjectorBuilder{TProjectionKey, TMessageEnvelope}"/> for method chaining.</returns>
+        public static ProjectorBuilder<TProjectionKey, TMessageEnvelope>
+            RegisterProjectionsFromAutofac<TProjectionKey, TMessageEnvelope>(this ProjectorBuilder<TProjectionKey, TMessageEnvelope> builder, IComponentContext componentContext)
+            where TProjectionKey : IEquatable<TProjectionKey>
             where TMessageEnvelope : MessageEnvelope
         {
-            var projections = componentContext.Resolve<IEnumerable<IProjection<TMessageEnvelope>>>();
+            var projections = componentContext.Resolve<IEnumerable<IProjection<TProjectionKey, TMessageEnvelope>>>();
             builder.Register(projections);
             return builder;
         }
@@ -44,12 +46,14 @@ namespace Projecto.Autofac
         /// <summary>
         /// Configures the builder to resolve requested dependencies from the Autofac component scope.
         /// </summary>
+        /// <typeparam name="TProjectionKey">The type of the key that uniquely identifies a projection.</typeparam>
         /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
         /// <param name="builder">The builder.</param>
         /// <param name="componentContext">The Autofac component context.</param>
-        /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
-        public static ProjectorBuilder<TMessageEnvelope>
-            UseAutofacDependencyLifetimeScopeFactory<TMessageEnvelope>(this ProjectorBuilder<TMessageEnvelope> builder, IComponentContext componentContext)
+        /// <returns><see cref="ProjectorBuilder{TProjectionKey, TMessageEnvelope}"/> for method chaining.</returns>
+        public static ProjectorBuilder<TProjectionKey, TMessageEnvelope>
+            UseAutofacDependencyLifetimeScopeFactory<TProjectionKey, TMessageEnvelope>(this ProjectorBuilder<TProjectionKey, TMessageEnvelope> builder, IComponentContext componentContext)
+            where TProjectionKey : IEquatable<TProjectionKey>
             where TMessageEnvelope : MessageEnvelope
         {
             var lifetimeScopeFactory = componentContext.Resolve<Func<ILifetimeScope>>();

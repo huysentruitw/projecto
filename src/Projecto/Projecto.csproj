@@ -48,6 +48,7 @@
     <Compile Include="DependencyInjection\DependencyLifetimeScopeEndingEvent.cs" />
     <Compile Include="DependencyInjection\IDependencyLifetimeScope.cs" />
     <Compile Include="DependencyInjection\IDependencyLifetimeScopeFactory.cs" />
+    <Compile Include="INextSequenceNumberRepository.cs" />
     <Compile Include="MessageEnvelope.cs" />
     <Compile Include="IProjection.cs" />
     <Compile Include="Projection.cs" />
