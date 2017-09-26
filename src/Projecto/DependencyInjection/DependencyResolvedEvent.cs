@@ -17,14 +17,8 @@
 namespace Projecto.DependencyInjection
 {
     /// <summary>
-    /// Interface that defines the connection lifetime scope factory.
+    /// Delegate for the dependency resolved event handler.
     /// </summary>
-    public interface IConnectionLifetimeScopeFactory
-    {
-        /// <summary>
-        /// Creates a new <see cref="IConnectionLifetimeScope"/> instance.
-        /// </summary>
-        /// <returns>A <see cref="IConnectionLifetimeScope"/> instance.</returns>
-        IConnectionLifetimeScope BeginLifetimeScope();
-    }
+    /// <param name="eventArgs">Event arguments.</param>
+    public delegate void DependencyResolvedEvent(DependencyResolvedEventArgs eventArgs);
 }

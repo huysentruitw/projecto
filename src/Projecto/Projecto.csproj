@@ -43,18 +43,17 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DependencyInjection\ConnectionResolvedEventArgs.cs" />
-    <Compile Include="DependencyInjection\ConnectionResolvedEvent.cs" />
-    <Compile Include="DependencyInjection\ConnectionLifetimeScopeEndingEvent.cs" />
-    <Compile Include="DependencyInjection\IConnectionLifetimeScope.cs" />
-    <Compile Include="DependencyInjection\IConnectionLifetimeScopeFactory.cs" />
-    <Compile Include="Extensions\ConnectionLifetimeScopeExtensions.cs" />
+    <Compile Include="DependencyInjection\DependencyResolvedEventArgs.cs" />
+    <Compile Include="DependencyInjection\DependencyResolvedEvent.cs" />
+    <Compile Include="DependencyInjection\DependencyLifetimeScopeEndingEvent.cs" />
+    <Compile Include="DependencyInjection\IDependencyLifetimeScope.cs" />
+    <Compile Include="DependencyInjection\IDependencyLifetimeScopeFactory.cs" />
     <Compile Include="MessageEnvelope.cs" />
     <Compile Include="IProjection.cs" />
     <Compile Include="Projection.cs" />
     <Compile Include="Projector.cs" />
     <Compile Include="ProjectorBuilder.cs" />
-    <Compile Include="DependencyInjection\ConnectionLifetimeScopeEndingEventArgs.cs" />
+    <Compile Include="DependencyInjection\DependencyLifetimeScopeEndingEventArgs.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup />

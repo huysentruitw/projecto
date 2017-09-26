@@ -9,12 +9,12 @@ namespace Projecto.Tests
     [TestFixture]
     public class ProjectorBuilderTests
     {
-        private readonly Mock<IConnectionLifetimeScopeFactory> _factoryMock;
+        private readonly Mock<IDependencyLifetimeScopeFactory> _factoryMock;
 
         public ProjectorBuilderTests()
         {
-            _factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
-            _factoryMock.Setup(x => x.BeginLifetimeScope()).Returns(() => new Mock<IConnectionLifetimeScope>().Object);
+            _factoryMock = new Mock<IDependencyLifetimeScopeFactory>();
+            _factoryMock.Setup(x => x.BeginLifetimeScope()).Returns(() => new Mock<IDependencyLifetimeScope>().Object);
         }
 
         [Test]
@@ -34,10 +34,10 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void SetConnectionLifetimeScopeFactory_PassingNullAsConnectionLifetimeScopeFactory_ShouldThrowException()
+        public void SetDependencyLifetimeScopeFactory_PassingNullAsDependencyLifetimeScopeFactory_ShouldThrowException()
         {
             var builder = new ProjectorBuilder<FakeMessageEnvelope>();
-            var ex = Assert.Throws<ArgumentNullException>(() => builder.SetConnectionLifetimeScopeFactory(null));
+            var ex = Assert.Throws<ArgumentNullException>(() => builder.SetDependencyLifetimeScopeFactory(null));
             Assert.That(ex.ParamName, Is.EqualTo("factory"));
         }
 
@@ -46,7 +46,7 @@ namespace Projecto.Tests
         {
             var projection = new TestProjection();
             var builder = new ProjectorBuilder<FakeMessageEnvelope>();
-            builder.Register(projection).SetConnectionLifetimeScopeFactory(_factoryMock.Object);
+            builder.Register(projection).SetDependencyLifetimeScopeFactory(_factoryMock.Object);
 
             var projector = builder.Build();
             Assert.That(projector.Projections.Length, Is.EqualTo(1));
@@ -58,7 +58,7 @@ namespace Projecto.Tests
         {
             var projections = new[] {new TestProjection(), new TestProjection()};
             var builder = new ProjectorBuilder<FakeMessageEnvelope>();
-            builder.Register(projections).SetConnectionLifetimeScopeFactory(_factoryMock.Object);
+            builder.Register(projections).SetDependencyLifetimeScopeFactory(_factoryMock.Object);
 
             var projector = builder.Build();
             Assert.That(projector.Projections.Length, Is.EqualTo(2));
@@ -67,14 +67,14 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void Build_WithCertainConnectionLifetimeScopeFactory_ShouldGetPassedToProjectorInstance()
+        public void Build_WithCertainDependencyLifetimeScopeFactory_ShouldGetPassedToProjectorInstance()
         {
             var projection = new TestProjection();
             var builder = new ProjectorBuilder<FakeMessageEnvelope>();
-            builder.Register(projection).SetConnectionLifetimeScopeFactory(_factoryMock.Object);
+            builder.Register(projection).SetDependencyLifetimeScopeFactory(_factoryMock.Object);
 
             var projector = builder.Build();
-            Assert.That(projector.ConnectionLifetimeScopeFactory, Is.EqualTo(_factoryMock.Object));
+            Assert.That(projector.DependencyLifetimeScopeFactory, Is.EqualTo(_factoryMock.Object));
         }
     }
 }

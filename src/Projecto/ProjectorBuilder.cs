@@ -29,7 +29,7 @@ namespace Projecto
         where TMessageEnvelope : MessageEnvelope
     {
         private readonly HashSet<IProjection<TMessageEnvelope>> _projections = new HashSet<IProjection<TMessageEnvelope>>();
-        private IConnectionLifetimeScopeFactory _connectionLifetimeScopeFactory;
+        private IDependencyLifetimeScopeFactory _dependencyLifetimeScopeFactory;
 
         /// <summary>
         /// Registers a projection.
@@ -57,15 +57,15 @@ namespace Projecto
         }
 
         /// <summary>
-        /// Sets the connection lifetime scope factory.
+        /// Sets the dependency lifetime scope factory.
         /// </summary>
-        /// <param name="factory">The connection lifetime scope factory.</param>
+        /// <param name="factory">The dependency lifetime scope factory.</param>
         /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
         [SuppressMessage("ReSharper", "UnusedMethodReturnValue.Global")]
-        public ProjectorBuilder<TMessageEnvelope> SetConnectionLifetimeScopeFactory(IConnectionLifetimeScopeFactory factory)
+        public ProjectorBuilder<TMessageEnvelope> SetDependencyLifetimeScopeFactory(IDependencyLifetimeScopeFactory factory)
         {
             if (factory == null) throw new ArgumentNullException(nameof(factory));
-            _connectionLifetimeScopeFactory = factory;
+            _dependencyLifetimeScopeFactory = factory;
             return this;
         }
 
@@ -73,6 +73,6 @@ namespace Projecto
         /// Build a <see cref="Projector{TMessageEnvelope}"/> instance.
         /// </summary>
         /// <returns>The <see cref="Projector{TMessageEnvelope}"/> instance.</returns>
-        public Projector<TMessageEnvelope> Build() => new Projector<TMessageEnvelope>(_projections, _connectionLifetimeScopeFactory);
+        public Projector<TMessageEnvelope> Build() => new Projector<TMessageEnvelope>(_projections, _dependencyLifetimeScopeFactory);
     }
 }

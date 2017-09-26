@@ -14,28 +14,17 @@
  * limitations under the License.
  */
 
-using System;
-
 namespace Projecto.DependencyInjection
 {
     /// <summary>
-    /// Describes the ending of a connection lifetime scope.
+    /// Interface that defines the dependency lifetime scope factory.
     /// </summary>
-    public class ConnectionLifetimeScopeEndingEventArgs
+    public interface IDependencyLifetimeScopeFactory
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="ConnectionLifetimeScopeEndingEventArgs"/> class. 
+        /// Creates a new <see cref="IDependencyLifetimeScope"/> instance.
         /// </summary>
-        /// <param name="lifetimeScope">The lifetime scope that is ending.</param>
-        public ConnectionLifetimeScopeEndingEventArgs(IConnectionLifetimeScope lifetimeScope)
-        {
-            if (lifetimeScope == null) throw new ArgumentNullException(nameof(lifetimeScope));
-            LifetimeScope = lifetimeScope;
-        }
-
-        /// <summary>
-        /// Gets the lifetime scope that is ending.
-        /// </summary>
-        public IConnectionLifetimeScope LifetimeScope { get; }
+        /// <returns>A <see cref="IDependencyLifetimeScope"/> instance.</returns>
+        IDependencyLifetimeScope BeginLifetimeScope();
     }
 }

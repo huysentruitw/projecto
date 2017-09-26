@@ -17,8 +17,8 @@
 namespace Projecto.DependencyInjection
 {
     /// <summary>
-    /// Delegate for the connection resolved event handler.
+    /// Delegate for the dependency lifetime scope ending event handler.
     /// </summary>
     /// <param name="eventArgs">Event arguments.</param>
-    public delegate void ConnectionResolvedEvent(ConnectionResolvedEventArgs eventArgs);
+    public delegate void DependencyLifetimeScopeEndingEvent(DependencyLifetimeScopeEndingEventArgs eventArgs);
 }

@@ -9,7 +9,7 @@ namespace Projecto.Autofac.Tests
 {
     [TestFixture]
     [SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
-    public class AutofacConnectionLifetimeScopeFactoryTests
+    public class AutofacDependencyLifetimeScopeFactoryTests
     {
         private Func<ILifetimeScope> _autofacLifetimeScopeFactory;
 
@@ -25,14 +25,14 @@ namespace Projecto.Autofac.Tests
         [Test]
         public void Constructor_PassingNullAsAutofacLifetimeScopeFactory_ShouldThrowException()
         {
-            var ex = Assert.Throws<ArgumentNullException>(() => new AutofacConnectionLifetimeScopeFactory(null));
+            var ex = Assert.Throws<ArgumentNullException>(() => new AutofacDependencyLifetimeScopeFactory(null));
             Assert.That(ex.ParamName, Is.EqualTo("autofacLifetimeScopeFactory"));
         }
 
         [Test]
         public void BeginLifetimeScope_CallTheMethodTwice_ShouldReturnANewScopeEachTime()
         {
-            var factory = new AutofacConnectionLifetimeScopeFactory(_autofacLifetimeScopeFactory);
+            var factory = new AutofacDependencyLifetimeScopeFactory(_autofacLifetimeScopeFactory);
             var scope1 = factory.BeginLifetimeScope();
             var scope2 = factory.BeginLifetimeScope();
             Assert.That(scope1, Is.Not.Null);
@@ -41,28 +41,28 @@ namespace Projecto.Autofac.Tests
         }
 
         [Test]
-        public void BeginLifetimeScope_CallOnce_ShouldForwardConnectionResolvedEvent()
+        public void BeginLifetimeScope_CallOnce_ShouldForwardDependencyResolvedEvent()
         {
-            ConnectionResolvedEventArgs eventArgs = null;
-            var factory = new AutofacConnectionLifetimeScopeFactory(_autofacLifetimeScopeFactory);
-            factory.ChildScopeConnectionResolved += e => { Assert.That(eventArgs, Is.Null); eventArgs = e; };
+            DependencyResolvedEventArgs eventArgs = null;
+            var factory = new AutofacDependencyLifetimeScopeFactory(_autofacLifetimeScopeFactory);
+            factory.ChildScopeDependencyResolved += e => { Assert.That(eventArgs, Is.Null); eventArgs = e; };
             var scope = factory.BeginLifetimeScope();
 
             Assert.That(eventArgs, Is.Null);
-            scope.ResolveConnection(typeof(FakeConnection));
+            scope.Resolve(typeof(FakeConnection));
 
             Assert.That(eventArgs, Is.Not.Null);
             Assert.That(eventArgs.LifetimeScope, Is.EqualTo(scope));
-            Assert.That(eventArgs.ConnectionType, Is.EqualTo(typeof(FakeConnection)));
-            Assert.That(eventArgs.Connection, Is.Not.Null);
-            Assert.That(eventArgs.Connection.GetType(), Is.EqualTo(typeof(FakeConnection)));
+            Assert.That(eventArgs.DependencyType, Is.EqualTo(typeof(FakeConnection)));
+            Assert.That(eventArgs.Dependency, Is.Not.Null);
+            Assert.That(eventArgs.Dependency.GetType(), Is.EqualTo(typeof(FakeConnection)));
         }
 
         [Test]
         public void BeginLifetimeScope_CallOnce_ShouldForwardScopeEndingEvent()
         {
-            ConnectionLifetimeScopeEndingEventArgs eventArgs = null;
-            var factory = new AutofacConnectionLifetimeScopeFactory(_autofacLifetimeScopeFactory);
+            DependencyLifetimeScopeEndingEventArgs eventArgs = null;
+            var factory = new AutofacDependencyLifetimeScopeFactory(_autofacLifetimeScopeFactory);
             factory.ChildScopeEnding += e => { Assert.That(eventArgs, Is.Null); eventArgs = e; };
             var scope = factory.BeginLifetimeScope();
 

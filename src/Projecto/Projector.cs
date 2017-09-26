@@ -21,7 +21,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Projecto.DependencyInjection;
-using Projecto.Extensions;
 
 namespace Projecto
 {
@@ -33,27 +32,27 @@ namespace Projecto
         where TMessageEnvelope : MessageEnvelope
     {
         private readonly HashSet<IProjection<TMessageEnvelope>> _projections;
-        private readonly IConnectionLifetimeScopeFactory _connectionLifetimeScopeFactory;
+        private readonly IDependencyLifetimeScopeFactory _dependencyLifetimeScopeFactory;
         private int? _nextSequenceNumber;
 
         /// <summary>
         /// Internal constructor, used by <see cref="ProjectorBuilder{TMessageEnvelope}"/>.
         /// </summary>
         /// <param name="projections">The registered projections.</param>
-        /// <param name="connectionLifetimeScopeFactory">The connection lifetime scope factory.</param>
-        internal Projector(HashSet<IProjection<TMessageEnvelope>> projections, IConnectionLifetimeScopeFactory connectionLifetimeScopeFactory)
+        /// <param name="dependencyLifetimeScopeFactory">The dependency lifetime scope factory.</param>
+        internal Projector(HashSet<IProjection<TMessageEnvelope>> projections, IDependencyLifetimeScopeFactory dependencyLifetimeScopeFactory)
         {
             if (projections == null) throw new ArgumentNullException(nameof(projections));
             if (!projections.Any()) throw new ArgumentException("No projections registered", nameof(projections));
-            if (connectionLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(connectionLifetimeScopeFactory));
+            if (dependencyLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(dependencyLifetimeScopeFactory));
             _projections = projections;
-            _connectionLifetimeScopeFactory = connectionLifetimeScopeFactory;
+            _dependencyLifetimeScopeFactory = dependencyLifetimeScopeFactory;
         }
 
         /// <summary>
-        /// Returns the connection lifetime scope factory for internal usage and unit-testing.
+        /// Returns the dependency lifetime scope factory for internal usage and unit-testing.
         /// </summary>
-        internal IConnectionLifetimeScopeFactory ConnectionLifetimeScopeFactory => _connectionLifetimeScopeFactory;
+        internal IDependencyLifetimeScopeFactory DependencyLifetimeScopeFactory => _dependencyLifetimeScopeFactory;
 
         /// <summary>
         /// Returns the Projections for internal usage and unit-testing.
@@ -67,10 +66,10 @@ namespace Projecto
         {
             if (_nextSequenceNumber.HasValue) return _nextSequenceNumber.Value;
 
-            using (var scope = _connectionLifetimeScopeFactory.BeginLifetimeScope())
+            using (var scope = _dependencyLifetimeScopeFactory.BeginLifetimeScope())
             {
                 _nextSequenceNumber = _projections
-                    .Select(projection => projection.GetNextSequenceNumber(scope.GetConnectionFactoryFor(projection)))
+                    .Select(projection => projection.GetNextSequenceNumber(() => scope.Resolve(projection.ConnectionType)))
                     .Min();
 
                 return _nextSequenceNumber.Value;
@@ -111,7 +110,7 @@ namespace Projecto
         {
             if (!_nextSequenceNumber.HasValue) GetNextSequenceNumber();
 
-            using (var scope = _connectionLifetimeScopeFactory.BeginLifetimeScope())
+            using (var scope = _dependencyLifetimeScopeFactory.BeginLifetimeScope())
             {
                 foreach (var messageEnvelope in messageEnvelopes)
                 {
@@ -121,7 +120,7 @@ namespace Projecto
 
                     foreach (var projection in _projections)
                     {
-                        var connectionFactory = scope.GetConnectionFactoryFor(projection);
+                        Func<object> connectionFactory = () => scope.Resolve(projection.ConnectionType);
                         if (projection.GetNextSequenceNumber(connectionFactory) != messageEnvelope.SequenceNumber) continue;
 
                         await projection.Handle(connectionFactory, messageEnvelope, cancellationToken).ConfigureAwait(false);

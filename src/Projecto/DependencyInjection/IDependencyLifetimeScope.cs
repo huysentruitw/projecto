@@ -21,9 +21,9 @@ using System.Diagnostics.CodeAnalysis;
 namespace Projecto.DependencyInjection
 {
     /// <summary>
-    /// Interface that defines a lifetime scope for resolving connections.
+    /// Interface that defines a lifetime scope for resolving dependencies.
     /// </summary>
-    public interface IConnectionLifetimeScope : IDisposable
+    public interface IDependencyLifetimeScope : IDisposable
     {
         /// <summary>
         /// Property dictionary for sharing data between different event handlers.
@@ -32,22 +32,22 @@ namespace Projecto.DependencyInjection
         IDictionary<object, object> Properties { get; }
 
         /// <summary>
-        /// Called when a certain connection needs to be resolved.
+        /// Called when a certain dependency needs to be resolved.
         /// </summary>
-        /// <param name="connectionType">The type of the connection.</param>
-        /// <returns>An instance of the requested connection type or null when the type was not found.</returns>
-        object ResolveConnection(Type connectionType);
+        /// <param name="dependencyType">The type of the dependency.</param>
+        /// <returns>An instance of the requested dependency type or null when the type was not found.</returns>
+        object Resolve(Type dependencyType);
 
         /// <summary>
-        /// Event triggered when a connection was resolved from the lifetime scope.
+        /// Event triggered when a dependency was resolved from the lifetime scope.
         /// </summary>
         [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
-        event ConnectionResolvedEvent ConnectionResolved;
+        event DependencyResolvedEvent DependencyResolved;
 
         /// <summary>
         /// Event triggered when the lifetime scope is about to end (right before disposal).
         /// </summary>
         [SuppressMessage("ReSharper", "EventNeverSubscribedTo.Global")]
-        event ConnectionLifetimeScopeEndingEvent ScopeEnding;
+        event DependencyLifetimeScopeEndingEvent ScopeEnding;
     }
 }

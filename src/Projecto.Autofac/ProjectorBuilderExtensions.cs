@@ -42,19 +42,19 @@ namespace Projecto.Autofac
         }
 
         /// <summary>
-        /// Configures the builder to resolve requested connection instances from the Autofac component scope.
+        /// Configures the builder to resolve requested dependencies from the Autofac component scope.
         /// </summary>
         /// <typeparam name="TMessageEnvelope">The type of the message envelope used to pass the message including custom information to the handler.</typeparam>
         /// <param name="builder">The builder.</param>
         /// <param name="componentContext">The Autofac component context.</param>
         /// <returns><see cref="ProjectorBuilder{TMessageEnvelope}"/> for method chaining.</returns>
         public static ProjectorBuilder<TMessageEnvelope>
-            UseAutofacConnectionLifetimeScopeFactory<TMessageEnvelope>(this ProjectorBuilder<TMessageEnvelope> builder, IComponentContext componentContext)
+            UseAutofacDependencyLifetimeScopeFactory<TMessageEnvelope>(this ProjectorBuilder<TMessageEnvelope> builder, IComponentContext componentContext)
             where TMessageEnvelope : MessageEnvelope
         {
             var lifetimeScopeFactory = componentContext.Resolve<Func<ILifetimeScope>>();
             Func<ILifetimeScope> childLifetimeScopeFactory = () => lifetimeScopeFactory().BeginLifetimeScope();
-            builder.SetConnectionLifetimeScopeFactory(new AutofacConnectionLifetimeScopeFactory(childLifetimeScopeFactory));
+            builder.SetDependencyLifetimeScopeFactory(new AutofacDependencyLifetimeScopeFactory(childLifetimeScopeFactory));
             return builder;
         }
     }

@@ -22,7 +22,7 @@ namespace Projecto.Autofac.Tests
 
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterProjectionsFromAutofac(ctx)
-                .UseAutofacConnectionLifetimeScopeFactory(ctx)
+                .UseAutofacDependencyLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -36,14 +36,14 @@ namespace Projecto.Autofac.Tests
         }
 
         [Test]
-        public void UseAutofac_CallingConnectionLifetimeScopeFactory_ShouldCreateAutofacConnectionLifetimeScope()
+        public void UseAutofac_CallingDependencyLifetimeScopeFactory_ShouldCreateAutofacDependencyLifetimeScope()
         {
             var services = new ContainerBuilder();
 
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterProjectionsFromAutofac(ctx)
-                .UseAutofacConnectionLifetimeScopeFactory(ctx)
+                .UseAutofacDependencyLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -51,8 +51,8 @@ namespace Projecto.Autofac.Tests
             var container = services.Build();
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
-            var scope = projector.ConnectionLifetimeScopeFactory.BeginLifetimeScope();
-            Assert.That(scope.GetType(), Is.EqualTo(typeof(AutofacConnectionLifetimeScope)));
+            var scope = projector.DependencyLifetimeScopeFactory.BeginLifetimeScope();
+            Assert.That(scope.GetType(), Is.EqualTo(typeof(AutofacDependencyLifetimeScope)));
         }
 
         [Test]
@@ -82,7 +82,7 @@ namespace Projecto.Autofac.Tests
             services.RegisterInstance(projectionMock.Object).AsImplementedInterfaces().SingleInstance();
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterProjectionsFromAutofac(ctx)
-                .UseAutofacConnectionLifetimeScopeFactory(ctx)
+                .UseAutofacDependencyLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -100,14 +100,14 @@ namespace Projecto.Autofac.Tests
         }
 
         [Test]
-        public void UseAutofacConnectionLifetimeScopeFactory_DisposeConnectionScope_ShouldNotDisposeParentAutofacLifetimeScope()
+        public void UseAutofacDependencyLifetimeScopeFactory_DisposeDependencyScope_ShouldNotDisposeParentAutofacLifetimeScope()
         {
             var services = new ContainerBuilder();
 
             services.RegisterType<FakeProjectionA>().AsImplementedInterfaces().SingleInstance();
             services.Register(ctx => new ProjectorBuilder<FakeMessageEnvelope>()
                 .RegisterProjectionsFromAutofac(ctx)
-                .UseAutofacConnectionLifetimeScopeFactory(ctx)
+                .UseAutofacDependencyLifetimeScopeFactory(ctx)
                 .Build())
                 .AsSelf()
                 .SingleInstance();
@@ -118,7 +118,7 @@ namespace Projecto.Autofac.Tests
             container.CurrentScopeEnding += (sender, args) => autofacLifetimeScopeDisposed = true;
 
             var projector = container.Resolve<Projector<FakeMessageEnvelope>>();
-            projector.ConnectionLifetimeScopeFactory.BeginLifetimeScope().Dispose();
+            projector.DependencyLifetimeScopeFactory.BeginLifetimeScope().Dispose();
 
             Assert.That(autofacLifetimeScopeDisposed, Is.False);
         }

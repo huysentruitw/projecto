@@ -15,13 +15,13 @@ namespace Projecto.Tests
     [SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
     public class ProjectorTests
     {
-        private readonly Mock<IConnectionLifetimeScopeFactory> _factoryMock;
+        private readonly Mock<IDependencyLifetimeScopeFactory> _factoryMock;
         private Mock<IProjection<FakeMessageEnvelope>>[] _projectionMocks;
 
         public ProjectorTests()
         {
-            _factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
-            _factoryMock.Setup(x => x.BeginLifetimeScope()).Returns(() => new Mock<IConnectionLifetimeScope>().Object);
+            _factoryMock = new Mock<IDependencyLifetimeScopeFactory>();
+            _factoryMock.Setup(x => x.BeginLifetimeScope()).Returns(() => new Mock<IDependencyLifetimeScope>().Object);
         }
 
         [SetUp]
@@ -51,11 +51,11 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void Constructor_PassNullAsConnectionLifetimeScopeFactory_ShouldThrowException()
+        public void Constructor_PassNullAsDependencyLifetimeScopeFactory_ShouldThrowException()
         {
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
             var ex = Assert.Throws<ArgumentNullException>(() => new Projector<FakeMessageEnvelope>(projections, null));
-            Assert.That(ex.ParamName, Is.EqualTo("connectionLifetimeScopeFactory"));
+            Assert.That(ex.ParamName, Is.EqualTo("dependencyLifetimeScopeFactory"));
         }
 
         [Test]
@@ -191,7 +191,7 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public async Task Project_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeConnectionLifetimeScopeInCorrectOrder()
+        public async Task Project_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeLifetimeScopeInCorrectOrder()
         {
             var nextSequence = 5;
             var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
@@ -210,7 +210,7 @@ namespace Projecto.Tests
 
             var executionOrder = 0;
 
-            var factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
+            var factoryMock = new Mock<IDependencyLifetimeScopeFactory>();
 
             var projections = new HashSet<IProjection<FakeMessageEnvelope>>(_projectionMocks.Take(1).Select(x => x.Object));
             var projector = new Projector<FakeMessageEnvelope>(projections, factoryMock.Object);
@@ -223,9 +223,9 @@ namespace Projecto.Tests
                 .Callback(() => Assert.That(executionOrder++, Is.EqualTo(0)))
                 .Returns(() =>
                 {
-                    var scopeMock = new Mock<IConnectionLifetimeScope>();
+                    var scopeMock = new Mock<IDependencyLifetimeScope>();
                     scopeMock
-                        .Setup(x => x.ResolveConnection(connectionType))
+                        .Setup(x => x.Resolve(connectionType))
                         .Callback(() => Assert.That(executionOrder++, Is.EqualTo(1)))
                         .Returns(() => new FakeConnection());
 
@@ -242,7 +242,7 @@ namespace Projecto.Tests
         }
 
         [Test]
-        public void GetNextSequenceNumber_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeConnectionLifetimeScopeInCorrectOrder()
+        public void GetNextSequenceNumber_WithProjectionThatResolvesConnection_ShouldCreateResolveDisposeLifetimeScopeInCorrectOrder()
         {
             var nextSequence = 5;
             var messageEnvelope = new FakeMessageEnvelope(nextSequence, new RegisteredMessageA());
@@ -264,15 +264,15 @@ namespace Projecto.Tests
 
             var executionOrder = 0;
 
-            var factoryMock = new Mock<IConnectionLifetimeScopeFactory>();
+            var factoryMock = new Mock<IDependencyLifetimeScopeFactory>();
             factoryMock
                 .Setup(x => x.BeginLifetimeScope())
                 .Callback(() => Assert.That(executionOrder++, Is.EqualTo(0)))
                 .Returns(() =>
                 {
-                    var scopeMock = new Mock<IConnectionLifetimeScope>();
+                    var scopeMock = new Mock<IDependencyLifetimeScope>();
                     scopeMock
-                        .Setup(x => x.ResolveConnection(connectionType))
+                        .Setup(x => x.Resolve(connectionType))
                         .Callback(() => Assert.That(executionOrder++, Is.EqualTo(1)))
                         .Returns(() => new FakeConnection());
 

@@ -21,42 +21,42 @@ using Projecto.DependencyInjection;
 namespace Projecto.Autofac
 {
     /// <summary>
-    /// Autofac based connection lifetime scope factory.
+    /// Autofac based dependency lifetime scope factory.
     /// </summary>
-    internal class AutofacConnectionLifetimeScopeFactory : IConnectionLifetimeScopeFactory
+    internal class AutofacDependencyLifetimeScopeFactory : IDependencyLifetimeScopeFactory
     {
         private readonly Func<ILifetimeScope> _autofacLifetimeScopeFactory;
 
         /// <summary>
-        /// Constructs a new <see cref="AutofacConnectionLifetimeScopeFactory"/> instance.
+        /// Constructs a new <see cref="AutofacDependencyLifetimeScopeFactory"/> instance.
         /// </summary>
         /// <param name="autofacLifetimeScopeFactory">Factory func for creating an Autofac lifetime scope.</param>
-        public AutofacConnectionLifetimeScopeFactory(Func<ILifetimeScope> autofacLifetimeScopeFactory)
+        public AutofacDependencyLifetimeScopeFactory(Func<ILifetimeScope> autofacLifetimeScopeFactory)
         {
             if (autofacLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(autofacLifetimeScopeFactory));
             _autofacLifetimeScopeFactory = autofacLifetimeScopeFactory;
         }
 
         /// <summary>
-        /// Begins a new connection lifetime scope.
+        /// Begins a new dependency lifetime scope.
         /// </summary>
-        /// <returns>A connection lifetime scope.</returns>
-        public IConnectionLifetimeScope BeginLifetimeScope()
+        /// <returns>A dependency lifetime scope.</returns>
+        public IDependencyLifetimeScope BeginLifetimeScope()
         {
-            var connectionLifetimeScope = new AutofacConnectionLifetimeScope(_autofacLifetimeScopeFactory());
-            connectionLifetimeScope.ConnectionResolved += e => ChildScopeConnectionResolved?.Invoke(e);
-            connectionLifetimeScope.ScopeEnding += e => ChildScopeEnding?.Invoke(e);
-            return connectionLifetimeScope;
+            var lifetimeScope = new AutofacDependencyLifetimeScope(_autofacLifetimeScopeFactory());
+            lifetimeScope.DependencyResolved += e => ChildScopeDependencyResolved?.Invoke(e);
+            lifetimeScope.ScopeEnding += e => ChildScopeEnding?.Invoke(e);
+            return lifetimeScope;
         }
 
         /// <summary>
-        /// Event triggered when a connection is resolved within a child lifetime scope.
+        /// Event triggered when a dependency is resolved within a child lifetime scope.
         /// </summary>
-        public event ConnectionResolvedEvent ChildScopeConnectionResolved;
+        public event DependencyResolvedEvent ChildScopeDependencyResolved;
 
         /// <summary>
         /// Event triggered when a child lifetime scope is about to end (right before disposal).
         /// </summary>
-        public event ConnectionLifetimeScopeEndingEvent ChildScopeEnding;
+        public event DependencyLifetimeScopeEndingEvent ChildScopeEnding;
     }
 }

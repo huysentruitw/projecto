@@ -11,12 +11,12 @@ namespace Projecto.Autofac.Tests
 {
     [TestFixture]
     [SuppressMessage("ReSharper", "ObjectCreationAsStatement")]
-    public class AutofacConnectionLifetimeScopeTests
+    public class AutofacDependencyLifetimeScopeTests
     {
         [Test]
         public void Constructor_PassNullAsILifetimeScope_ShouldThrowException()
         {
-            var ex = Assert.Throws<ArgumentNullException>(() => new AutofacConnectionLifetimeScope(null));
+            var ex = Assert.Throws<ArgumentNullException>(() => new AutofacDependencyLifetimeScope(null));
             Assert.That(ex.ParamName, Is.EqualTo("lifetimeScope"));
         }
 
@@ -26,7 +26,7 @@ namespace Projecto.Autofac.Tests
             var lifetimeScopeMock = new Mock<ILifetimeScope>();
             var scopeEndingCalled = 0;
 
-            using (var scope = new AutofacConnectionLifetimeScope(lifetimeScopeMock.Object))
+            using (var scope = new AutofacDependencyLifetimeScope(lifetimeScopeMock.Object))
                 scope.ScopeEnding += e => scopeEndingCalled++;
 
             Assert.That(scopeEndingCalled, Is.EqualTo(1));
@@ -38,7 +38,7 @@ namespace Projecto.Autofac.Tests
             var lifetimeScopeMock = new Mock<ILifetimeScope>();
             var scopeEndingCalled = 0;
 
-            var scope = new AutofacConnectionLifetimeScope(lifetimeScopeMock.Object);
+            var scope = new AutofacDependencyLifetimeScope(lifetimeScopeMock.Object);
             scope.ScopeEnding += e => scopeEndingCalled++;
             scope.Dispose();
             scope.Dispose();
@@ -51,7 +51,7 @@ namespace Projecto.Autofac.Tests
         {
             var lifetimeScopeMock = new Mock<ILifetimeScope>();
 
-            using (new AutofacConnectionLifetimeScope(lifetimeScopeMock.Object)) { }
+            using (new AutofacDependencyLifetimeScope(lifetimeScopeMock.Object)) { }
 
             lifetimeScopeMock.Verify(x => x.Dispose(), Times.Once);
         }
@@ -60,51 +60,51 @@ namespace Projecto.Autofac.Tests
         public void Construction_NewScope_ShouldHaveEmptyPropertiesDictionary()
         {
             var lifetimeScopeMock = new Mock<ILifetimeScope>();
-            var scope = new AutofacConnectionLifetimeScope(lifetimeScopeMock.Object);
+            var scope = new AutofacDependencyLifetimeScope(lifetimeScopeMock.Object);
             Assert.That(scope.Properties, Is.Not.Null);
             Assert.That(scope.Properties.Count, Is.EqualTo(0));
         }
 
         [Test]
-        public void ResolveConnection_PassingSomeConnectionType_ShouldResolveFromAutofacLifetimeScope()
+        public void ResolveDependency_PassingSomeDependencyType_ShouldResolveFromAutofacLifetimeScope()
         {
             var builder = new ContainerBuilder();
             builder.RegisterType<FakeConnection>();
             var container = builder.Build();
 
-            var scope = new AutofacConnectionLifetimeScope(container);
-            var connection = scope.ResolveConnection(typeof(FakeConnection));
+            var scope = new AutofacDependencyLifetimeScope(container);
+            var connection = scope.Resolve(typeof(FakeConnection));
 
             Assert.That(connection, Is.Not.Null);
             Assert.That(connection.GetType(), Is.EqualTo(typeof(FakeConnection)));
         }
 
         [Test]
-        public void ResolveConnection_PassingKnownConnectionType_ShouldFireConnectionResolvedEvent()
+        public void ResolveDependency_PassingKnownDependencyType_ShouldFireDependencyResolvedEvent()
         {
-            ConnectionResolvedEventArgs eventArgs = null;
+            DependencyResolvedEventArgs eventArgs = null;
 
             var builder = new ContainerBuilder();
             builder.RegisterType<FakeConnection>();
             var container = builder.Build();
 
-            var scope = new AutofacConnectionLifetimeScope(container);
-            scope.ConnectionResolved += e =>
+            var scope = new AutofacDependencyLifetimeScope(container);
+            scope.DependencyResolved += e =>
             {
                 Assert.That(eventArgs, Is.Null);
                 eventArgs = e;
             };
 
-            Assert.That(scope.ResolveConnection(typeof(FakeConnection)), Is.Not.Null);
+            Assert.That(scope.Resolve(typeof(FakeConnection)), Is.Not.Null);
 
             Assert.That(eventArgs, Is.Not.Null);
             Assert.That(eventArgs.LifetimeScope, Is.EqualTo(scope));
-            Assert.That(eventArgs.ConnectionType, Is.EqualTo(typeof(FakeConnection)));
-            Assert.That(eventArgs.Connection.GetType(), Is.EqualTo(typeof(FakeConnection)));
+            Assert.That(eventArgs.DependencyType, Is.EqualTo(typeof(FakeConnection)));
+            Assert.That(eventArgs.Dependency.GetType(), Is.EqualTo(typeof(FakeConnection)));
         }
 
         [Test]
-        public void ResolveConnection_PassingConnectionTypeThatResolvesAsNull_ShouldNotFireConnectionResolvedEvent()
+        public void ResolveDependency_PassingDependencyTypeThatResolvesAsNull_ShouldNotFireDependencyResolvedEvent()
         {
             var eventFired = false;
 
@@ -112,10 +112,10 @@ namespace Projecto.Autofac.Tests
             builder.Register<FakeConnection>(ctx => null);
             var container = builder.Build();
 
-            var scope = new AutofacConnectionLifetimeScope(container);
-            scope.ConnectionResolved += e => eventFired = true;
+            var scope = new AutofacDependencyLifetimeScope(container);
+            scope.DependencyResolved += e => eventFired = true;
 
-            Assert.Throws<DependencyResolutionException>(() => scope.ResolveConnection(typeof(FakeConnection)));
+            Assert.Throws<DependencyResolutionException>(() => scope.Resolve(typeof(FakeConnection)));
 
             Assert.That(eventFired, Is.False);
         }
