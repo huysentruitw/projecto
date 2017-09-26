@@ -235,17 +235,17 @@ namespace Projecto.Tests
             _projectionMocks[0].SetupGet(x => x.Key).Returns("A");
             _projectionMocks[0]
                 .Setup(x => x.Handle(It.IsAny<Func<object>>(), messageEnvelope, It.IsAny<CancellationToken>()))
-                .Returns<object, FakeMessageEnvelope, CancellationToken>((_, __, token) =>
+                .Returns<object, FakeMessageEnvelope, CancellationToken>(async (_, __, token) =>
                 {
-                    Thread.Sleep(20);
+                    await Task.Delay(20).ConfigureAwait(false);
                     isCancelled = token.IsCancellationRequested;
-                    return Task.FromResult(false);
+                    return false;
                 });
 
             var projections = new HashSet<IProjection<string, FakeMessageEnvelope>>(_projectionMocks.Take(1).Select(x => x.Object));
             var projector = new Projector<string, FakeMessageEnvelope, TestNextSequenceNumberRepository>(projections, _factoryMock.Object);
-            var cancellationTokenSource = new CancellationTokenSource(10);
-            await projector.Project(messageEnvelope, cancellationTokenSource.Token);
+            var cancellationTokenSource = new CancellationTokenSource(5);
+            await projector.Project(messageEnvelope, cancellationTokenSource.Token).ConfigureAwait(false);
             Assert.True(isCancelled);
         }
 
