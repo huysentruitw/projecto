@@ -38,6 +38,7 @@ namespace Projecto
         private readonly HashSet<IProjection<TProjectionKey, TMessageEnvelope>> _projections;
         private readonly IDependencyLifetimeScopeFactory _dependencyLifetimeScopeFactory;
         private Dictionary<TProjectionKey, int> _nextSequenceNumberCache = null;
+        private int? _nextSequenceNumber = null;
         private readonly object _syncRoot = new object();
 
         /// <summary>
@@ -71,7 +72,7 @@ namespace Projecto
         /// <returns>The next event sequence number.</returns>
         public async Task<int> GetNextSequenceNumber()
         {
-            if (_nextSequenceNumberCache == null)
+            if (!_nextSequenceNumber.HasValue)
             {
                 using (var scope = _dependencyLifetimeScopeFactory.BeginLifetimeScope())
                 {
@@ -80,7 +81,7 @@ namespace Projecto
                 }
             }
 
-            return _nextSequenceNumberCache.Values.Min();
+            return _nextSequenceNumber ?? 1;
         }
 
         /// <summary>
@@ -121,15 +122,14 @@ namespace Projecto
             {
                 var nextSequenceNumberRepository = ResolveNextSequenceNumberRepository(scope);
                 await CacheNextSequenceNumbers(nextSequenceNumberRepository).ConfigureAwait(false);
-                var nextSequenceNumber = await GetNextSequenceNumber().ConfigureAwait(false);
 
                 try
                 {
                     foreach (var messageEnvelope in messageEnvelopes)
                     {
-                        if (messageEnvelope.SequenceNumber != nextSequenceNumber)
+                        if (messageEnvelope.SequenceNumber != _nextSequenceNumber)
                             throw new ArgumentOutOfRangeException(nameof(messageEnvelope.SequenceNumber),
-                                $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {nextSequenceNumber}");
+                                $"Message {messageEnvelope.Message.GetType()} has invalid sequence number {messageEnvelope.SequenceNumber} instead of {_nextSequenceNumber}");
 
                         foreach (var projection in _projections)
                         {
@@ -140,7 +140,7 @@ namespace Projecto
                             _nextSequenceNumberCache[projection.Key] = _nextSequenceNumberCache[projection.Key] + 1;
                         }
 
-                        nextSequenceNumber++;
+                        _nextSequenceNumber++;
                     }
                 }
                 finally
@@ -152,7 +152,7 @@ namespace Projecto
 
         private async Task CacheNextSequenceNumbers(TNextSequenceNumberRepository nextSequenceNumberRepository)
         {
-            if (_nextSequenceNumberCache != null) return;
+            if (_nextSequenceNumber != null) return;
 
             var projectionKeys = new HashSet<TProjectionKey>(_projections.Select(x => x.Key));
             var sequenceNumbers = await nextSequenceNumberRepository.Fetch(projectionKeys).ConfigureAwait(false);
@@ -160,8 +160,9 @@ namespace Projecto
 
             lock (_syncRoot)
             {
-                if (_nextSequenceNumberCache != null) return;
+                if (_nextSequenceNumber != null) return;
                 _nextSequenceNumberCache = dictionary;
+                _nextSequenceNumber = _nextSequenceNumberCache.Values.Min();
             }
         }
 
