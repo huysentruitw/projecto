@@ -35,7 +35,7 @@ namespace Projecto
         where TMessageEnvelope : MessageEnvelope
         where TNextSequenceNumberRepository : INextSequenceNumberRepository<TProjectionKey>
     {
-        private readonly HashSet<IProjection<TProjectionKey, TMessageEnvelope>> _projections;
+        private readonly List<IProjection<TProjectionKey, TMessageEnvelope>> _projections;
         private readonly IDependencyLifetimeScopeFactory _dependencyLifetimeScopeFactory;
         private Dictionary<TProjectionKey, int> _nextSequenceNumberCache = null;
         private int? _nextSequenceNumber = null;
@@ -52,7 +52,8 @@ namespace Projecto
             if (!projections.Any()) throw new ArgumentException("No projections registered", nameof(projections));
             if (dependencyLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(dependencyLifetimeScopeFactory));
             GuaranteeKeyUniqueness(projections);
-            _projections = projections;
+            _projections = new List<IProjection<TProjectionKey, TMessageEnvelope>>(projections);
+            _projections.Sort(new ProjectionPriorityComparer<TProjectionKey, TMessageEnvelope>());
             _dependencyLifetimeScopeFactory = dependencyLifetimeScopeFactory;
         }
 

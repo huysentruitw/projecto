@@ -324,5 +324,38 @@ namespace Projecto.Tests
             Assert.That(_sequenceNumberRepository["B"], Is.EqualTo(50));
             Assert.That(_sequenceNumberRepository["C"], Is.EqualTo(50));
         }
+
+        [Test]
+        public async Task Project_TwoProjectionsWithDifferentPriority_ShouldHandleProjectionsInCorrectOrder()
+        {
+            var projectSequence = string.Empty;
+
+            await _sequenceNumberRepository.Store(new Dictionary<string, int> { { "A", 1 }, { "B", 1 }, { "C", 1 } });
+            _projectionMocks[0].SetupGet(x => x.Key).Returns("A");
+            _projectionMocks[1].SetupGet(x => x.Key).Returns("B");
+            _projectionMocks[2].SetupGet(x => x.Key).Returns("C");
+
+            _projectionMocks[0].Setup(x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), CancellationToken.None)).Callback(() => projectSequence += "A").Returns(Task.FromResult(false));
+            _projectionMocks[1].Setup(x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), CancellationToken.None)).Callback(() => projectSequence += "B").Returns(Task.FromResult(false));
+            _projectionMocks[2].Setup(x => x.Handle(It.IsAny<Func<object>>(), It.IsAny<FakeMessageEnvelope>(), CancellationToken.None)).Callback(() => projectSequence += "C").Returns(Task.FromResult(false));
+
+            _projectionMocks[0].SetupGet(x => x.Priority).Returns(Priority.Low);
+            _projectionMocks[1].SetupGet(x => x.Priority).Returns(Priority.High);
+            _projectionMocks[2].SetupGet(x => x.Priority).Returns(Priority.Normal);
+
+            var projections = new HashSet<IProjection<string, FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
+            var projector = new Projector<string, FakeMessageEnvelope, TestNextSequenceNumberRepository>(projections, _factoryMock.Object);
+            await projector.Project(new FakeMessageEnvelope(1, new RegisteredMessageA()));
+
+            _projectionMocks[0].SetupGet(x => x.Priority).Returns(Priority.Normal);
+            _projectionMocks[1].SetupGet(x => x.Priority).Returns(Priority.Low);
+            _projectionMocks[2].SetupGet(x => x.Priority).Returns(Priority.High);
+
+            projections = new HashSet<IProjection<string, FakeMessageEnvelope>>(_projectionMocks.Select(x => x.Object));
+            projector = new Projector<string, FakeMessageEnvelope, TestNextSequenceNumberRepository>(projections, _factoryMock.Object);
+            await projector.Project(new FakeMessageEnvelope(2, new RegisteredMessageA()));
+
+            Assert.That(projectSequence, Is.EqualTo("BCACAB"));
+        }
     }
 }

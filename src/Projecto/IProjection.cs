@@ -40,6 +40,11 @@ namespace Projecto
         Type ConnectionType { get; }
 
         /// <summary>
+        /// Gets the priority of this projection.
+        /// </summary>
+        Priority Priority { get; }
+
+        /// <summary>
         /// Passes a message to a matching handler, if any.
         /// </summary>
         /// <param name="connectionFactory">The connection factory.</param>

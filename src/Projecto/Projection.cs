@@ -63,6 +63,11 @@ namespace Projecto
         public Type ConnectionType => typeof(TConnection);
 
         /// <summary>
+        /// Gets the priority of this projection. Defaults to Normal.
+        /// </summary>
+        public Priority Priority { get; protected set; } = Priority.Normal;
+
+        /// <summary>
         /// Registers a message handler for a given message type.
         /// </summary>
         /// <typeparam name="TMessage">The message type.</typeparam>
