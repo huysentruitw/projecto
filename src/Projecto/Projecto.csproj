@@ -51,7 +51,9 @@
     <Compile Include="INextSequenceNumberRepository.cs" />
     <Compile Include="MessageEnvelope.cs" />
     <Compile Include="IProjection.cs" />
+    <Compile Include="Priority.cs" />
     <Compile Include="Projection.cs" />
+    <Compile Include="ProjectionPriorityComparer.cs" />
     <Compile Include="Projector.cs" />
     <Compile Include="ProjectorBuilder.cs" />
     <Compile Include="DependencyInjection\DependencyLifetimeScopeEndingEventArgs.cs" />
