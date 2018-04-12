@@ -1,12 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Title>Projecto.Autofac.Tests</Title>
     <TargetFramework>net471</TargetFramework>
-    <Product>Projecto</Product>
-    <Company>Huysentruit</Company>
-    <Authors>Wouter Huysentruit</Authors>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <ItemGroup>
