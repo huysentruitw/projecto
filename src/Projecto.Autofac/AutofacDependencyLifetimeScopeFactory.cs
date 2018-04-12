@@ -33,8 +33,7 @@ namespace Projecto.Autofac
         /// <param name="autofacLifetimeScopeFactory">Factory func for creating an Autofac lifetime scope.</param>
         public AutofacDependencyLifetimeScopeFactory(Func<ILifetimeScope> autofacLifetimeScopeFactory)
         {
-            if (autofacLifetimeScopeFactory == null) throw new ArgumentNullException(nameof(autofacLifetimeScopeFactory));
-            _autofacLifetimeScopeFactory = autofacLifetimeScopeFactory;
+            _autofacLifetimeScopeFactory = autofacLifetimeScopeFactory ?? throw new ArgumentNullException(nameof(autofacLifetimeScopeFactory));
         }
 
         /// <summary>

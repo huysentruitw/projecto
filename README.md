@@ -4,7 +4,7 @@
 
 ## Overview
 
-Managed .NET (C#) library for handling CQRS/ES projections while maintaining the event sequence order.
+Managed .NET 4.7.1 / .NET Core library for handling CQRS/ES projections while maintaining the event sequence order.
 
 ## Get it on [NuGet](https://www.nuget.org/packages/Projecto/)
 
